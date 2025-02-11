@@ -573,8 +573,7 @@ void backspace(Editor* e,char c)
 	render( e );
 	return;
 }
-//problem must be with this function
-//it's not that
+
 void list_of_lienes( Editor * e )
 {
 	resize_list( e );
@@ -609,16 +608,8 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 }
 
 
+void move_cursor_down( Editor * e );
 
-void down(Editor *e)
-{
-	if(e->cursor.y_index < e->lines.count-1)
-		e->cursor.y_index++;
-	if(e->cursor.y_index - e->cursor.y_offset == e->window.rows -1)	
-		e->cursor.y_offset++;
-	e->cursor.last_y_offset = e->cursor.y_offset;
-	return;
-}
 
 
 void enter_key( Editor * e, char c )
@@ -626,7 +617,6 @@ void enter_key( Editor * e, char c )
 	Line_data* temp = e->lines.list_of_lienes[ e->cursor.y_index ];
 	char buff[ temp->count - e->cursor.index ];
 		int j =0;
-	// might need to change?
 	for( int i = e->cursor.index; i < temp->count; i++ )
 	{
 		buff[j] = temp->data[i];
@@ -638,7 +628,7 @@ void enter_key( Editor * e, char c )
 	e->lines.count++;
 	e->saved = false;
 	list_of_lienes( e );
-	down( e );	
+	move_cursor_down( e );	
 	adjust( e );
 	render( e );
 	return;
