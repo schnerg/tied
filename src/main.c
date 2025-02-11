@@ -185,11 +185,11 @@ void init_cursor(Editor * e)
 
 void init_settings(Editor *e)
 {
-	e->saved =true;
-	e->mode = 1;
+	e->saved = true;
+	e->mode = NORMAL;
 	return;
 }
-void init(Editor * e, char * file_name)
+void init( Editor * e, char * file_name )
 {
 	enable_Raw_mode(e);
 	init_settings(e);
@@ -254,9 +254,9 @@ void update_cursor(Editor * e)
 	}
 	char bar[] = "\e[5 q"	;
 	char block[] = "\e[1 q"	;
-	if(e->mode ==1)
+	if(e->mode == NORMAL)
 		write(STDOUT_FILENO,block,strlen(block));
-	if(e->mode ==0)
+	if(e->mode == INSERT)
 		write(STDOUT_FILENO,bar,strlen(bar));
 	return;
 }
@@ -479,6 +479,7 @@ void adjust(Editor * e)
 		e->cursor.last_y_offset = e->cursor.y_offset;
 }
 
+
 char getch() 
 {
   int nread;
@@ -511,9 +512,6 @@ void insert_char(Editor * e, char c)
 }
 
 
-//why is this segfualting?
-//it makes me ANGRY!
-//
 void remove_line( Editor * e )
 {
 	Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
@@ -645,169 +643,161 @@ void enter_key( Editor * e, char c )
 	return;
 }
 
-void events(Editor * e)
+
+
+
+
+
+
+
+void move_cursor_up( Editor * e )
+{
+	if(e->cursor.y_index >0)
+		e->cursor.y_index--;
+	if( e->cursor.y_offset >0 && e->cursor.y_index - e->cursor.y_offset < 0 )
+		e->cursor.y_offset--;
+	e->cursor.last_y_offset = e->cursor.y_offset;
+	return;
+}
+void move_cursor_down( Editor * e )
+{
+	if(e->cursor.y_index < e->lines.count-1)
+		e->cursor.y_index++;
+	if(e->cursor.y_index - e->cursor.y_offset == e->window.rows -1)	
+		e->cursor.y_offset++;
+	e->cursor.last_y_offset = e->cursor.y_offset;
+	return;
+}
+void move_cursor_left( Editor * e )
+{
+	if(e->cursor.index >0)
+		e->cursor.index--;
+	if(e->cursor.rx == e->line_nums+1 && e->cursor.x_offset >0)
+		e->cursor.x_offset -= e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
+	if(e->cursor.x_offset <0) e->cursor.x_offset = 0;
+	e->cursor.last_index = e->cursor.index;
+	e->cursor.last_x_offset = e->cursor.x_offset;
+	return;
+}
+void move_cursor_right( Editor * e )
+{
+	if(e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
+		e->cursor.index++;
+	if(e->cursor.rx >= e->window.cols)			
+		e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
+	e->cursor.last_index = e->cursor.index;
+	e->cursor.last_x_offset = e->cursor.x_offset;
+
+	return;
+}
+
+
+void events_insert( Editor * e )
+{
+	char c = getch();
+	switch( c )
+	{
+		case 27: // escape
+		{
+			char temp;
+			if( temp = getch() != 0 )
+				temp = getch();
+			switch( temp )
+			{
+				case 'A': move_cursor_up( e );
+				case 'B': move_cursor_down( e );
+				case 'C': move_cursor_right( e );
+				case 'D': move_cursor_left( e );
+				default: e->mode = NORMAL;
+			}
+		}break;
+		case 13: enter_key(e,c);break; //enter key
+		case 127: backspace(e,c); break;
+		default:
+		{
+			if(isprint(c) ||c=='\t')
+				insert_char(e,c);
+		}break;
+	}
+	return;
+}
+
+void events_normal(Editor * e)
 {	
 	char c=getch();
 	switch(c)
 	{
 		case 'o':
 		{
-				if(e->mode ==1)
-				{
-					e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
-					enter_key(e,c);
-					e->mode =0;
-				}
-				else
-					insert_char(e,c);
+			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
+			enter_key(e,c);
+			e->mode = INSERT;
 		}break;
-		case 'i':
-		{
-			if(e->mode ==1)
-				e->mode =0;
-			else
-				insert_char(e,c);
-		}break;
+		case 'i': e->mode = INSERT; break;
 		case 27: // escape
 		{
 			char temp;
-			if(temp =getch() !=0 )
+			if( temp = getch() != 0 )
 				temp = getch();
-				if(temp=='A')
-					goto up;
-				if(temp=='B')
-					goto down;
-				if(temp=='C')
-					goto right;
-				if(temp=='D')
-					goto left;
-			else
-			e->mode =1;
+			switch( temp )
+			{
+				case 'A': move_cursor_up( e );
+				case 'B': move_cursor_down( e );
+				case 'C': move_cursor_right( e );
+				case 'D': move_cursor_left( e );
+				default: e->mode = NORMAL;
+			}
 		}break;
 		case CTRL_KEY('s'):
 		{
-			if(e->mode ==1)
-			{
 				save_file( e);
 				e->saved = true;
-			}
 		}break;
 		case CTRL_KEY('q'):
 		{
-			if(e->mode ==1)
-			{
-				if(e->saved == true)
-					e->done = true;
+			if(e->saved == true)
+				e->done = true;
 			else
 				set_debug_message(e,": no write since last change");
-			}
-			else
-				insert_char(e,c);
 		}break;
 		case CTRL_KEY('x'):
 		{
-			if(e->mode ==1)
-			{
-				e->done = true;
-			}
+			e->done = true;
 		}break;
-
 		case 13:// enter key
 		{
-			if(e->mode ==1)
-				goto down;
-			else
-				enter_key(e,c);
+			move_cursor_down( e );
 		}break;
-	
-		case 'k':// up
-		{
-			if(e->mode ==1)
-			{
-				up:
-				if(e->cursor.y_index >0)
-					e->cursor.y_index--;
-				if( e->cursor.y_offset >0 && e->cursor.y_index - e->cursor.y_offset < 0 )
-					e->cursor.y_offset--;
-				e->cursor.last_y_offset = e->cursor.y_offset;
-				render(e);
-			}
-			else
-				insert_char(e,c);
-		}break;
-		
-		case 'j': //down
-		{
-			if(e->mode ==1)
-			{
-				down:
-				if(e->cursor.y_index < e->lines.count-1)
-					e->cursor.y_index++;
-				if(e->cursor.y_index - e->cursor.y_offset == e->window.rows -1)	
-					e->cursor.y_offset++;
-				e->cursor.last_y_offset = e->cursor.y_offset;
-				render(e);
-			}
-			else
-				insert_char(e,c);
-		}break;
-		
-		case 'h':// left
-		{
-			if(e->mode ==1)
-			{
-				left:
-				if(e->cursor.index >0)
-					e->cursor.index--;
-				if(e->cursor.rx == e->line_nums+1 && e->cursor.x_offset >0)
-						e->cursor.x_offset -= e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
-				if(e->cursor.x_offset <0) e->cursor.x_offset = 0;
-				e->cursor.last_index = e->cursor.index;
-				e->cursor.last_x_offset = e->cursor.x_offset;
-				render(e);
-			}
-			else
-				insert_char(e,c);
-		}break;
-		
-		case 'l'://right
-		{
-			if(e->mode ==1)
-			{
-				right:
-				if(e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
-					e->cursor.index++;
-				if(e->cursor.rx >= e->window.cols)			
-					e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
-				e->cursor.last_index = e->cursor.index;
-				e->cursor.last_x_offset = e->cursor.x_offset;
-				render(e);
-			}
-			else
-				insert_char(e,c);
-		}break;
-		default:
-		{ 
-			if(e->mode ==0)
-			{
-				if(c == 127)//backspace
-				{
-					backspace(e,c);
-				}
-				else if(isprint(c) ||c=='\t')
-				{
-					insert_char(e,c);
-				}
-			}
-		}break;
+		case 'k': move_cursor_up( e );	 break;
+		case 'j': move_cursor_down( e ); break; 
+		case 'h': move_cursor_left( e ); break;
+		case 'l': move_cursor_right( e );break;
 	}
 	
-	if(get_window_size(e))
+		return;
+}
+
+
+void events( Editor * e )
+{
+	switch( e->mode )
+	{
+		case NORMAL:
+		{
+			events_normal( e );
+		}break;
+		case INSERT:
+		{
+			events_insert( e );
+		}break;
+	}
+if(get_window_size(e))
 		adjust(e);
 	render(e);
-		
+
 	return;
 }
+
 
 void quit(Editor * e)
 {

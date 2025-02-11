@@ -70,6 +70,14 @@ typedef struct
 typedef struct
 {
 
+	enum modes
+	{
+		NORMAL,
+		INSERT
+	}mode;
+
+	//int mode;
+
 
 	Cursor cursor;
 	
@@ -81,7 +89,8 @@ typedef struct
 	int tabs_space;
 	int line_nums;
 	//editor settings
-	int mode;
+	
+
 	bool saved;
 	char debug_message[40];
 	char file_name[255];
