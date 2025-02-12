@@ -275,6 +275,7 @@ void editorRefreshScreen() {
   //write(STDOUT_FILENO, "\x1b[2J", 4);
   write(STDOUT_FILENO, "\x1b[H", 3);
 }
+
 void correct_string_becuase_of_tabs(Editor * e,char * string_to_print, char * buff)
 { 
 	int j =0; 
@@ -284,7 +285,7 @@ void correct_string_becuase_of_tabs(Editor * e,char * string_to_print, char * bu
 		{
 			string_to_print[j] = ' ';
 			j++;
-			while(j % TAB_STOP !=0 )
+			while(j % TAB_STOP != 0 )
 			{
 				string_to_print[j] = ' ';
 				j++;
@@ -437,9 +438,9 @@ void print_mode(Editor *e)
 	write(STDOUT_FILENO,clear_row,strlen(clear_row));
 
 	char buff[80];
-	if(e->mode ==1)
-		sprintf(buff,"\033[33;44mNORMAL MODE \033[0m%s",e->debug_message);
-	else if(e->mode ==0)
+	if( e->mode == NORMAL )
+		sprintf( buff,"\033[33;44mNORMAL MODE \033[0m%s",e->debug_message);
+	else if( e->mode == INSERT )
 		sprintf(buff,"\033[33;44mINSERT MODE \033[0m%s",e->debug_message);
 	write(STDIN_FILENO,buff,strlen(buff));
 	sprintf(buff,"\033[0m");
@@ -459,6 +460,7 @@ void render(Editor*e)
 void adjust(Editor * e)
 {
 	// when window resizes, adjust x_offset so that cursor is still on screen in proper pos;
+	// this is hard to read
 	if(e->cursor.index - e->cursor.x_offset > e->window.cols || e->cursor.index < e->cursor.x_offset)
 	{
 		e->cursor.x_offset =0;
@@ -636,8 +638,15 @@ void enter_key( Editor * e, char c )
 
 
 
-
-
+void search( Editor * e )
+{
+	// move curor down to menu bar
+	// disable rawmode
+	// getstring()
+	// enable_Raw_mode 
+	// search()
+	return;
+}
 
 
 
@@ -645,7 +654,7 @@ void move_cursor_up( Editor * e )
 {
 	if(e->cursor.y_index >0)
 		e->cursor.y_index--;
-	if( e->cursor.y_offset >0 && e->cursor.y_index - e->cursor.y_offset < 0 )
+	if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
 		e->cursor.y_offset--;
 	e->cursor.last_y_offset = e->cursor.y_offset;
 	render(e);
@@ -707,7 +716,6 @@ void events_insert( Editor * e )
 				{
 					e->mode = NORMAL;
 					update_cursor( e );
-
 				}break;
 			}
 		}break;
@@ -723,11 +731,16 @@ void events_insert( Editor * e )
 	return;
 }
 
+
 void events_normal( Editor * e )
 {	
 	char c=getch();
 	switch(c)
 	{
+		case '/':
+		{
+			search( e );
+		}
 		case 'o':
 		{
 			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
@@ -792,8 +805,8 @@ void events( Editor * e )
 			events_insert( e );
 		}break;
 	}
-if(get_window_size(e))
-		adjust(e);
+	if( get_window_size( e ) )
+		adjust( e );
 
 	return;
 }
