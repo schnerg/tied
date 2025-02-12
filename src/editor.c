@@ -699,10 +699,10 @@ void events_insert( Editor * e )
 				temp = getch();
 			switch( temp )
 			{
-				case 'A': move_cursor_up( e );
-				case 'B': move_cursor_down( e );
-				case 'C': move_cursor_right( e );
-				case 'D': move_cursor_left( e );
+				case 'A': move_cursor_up( e );break;
+				case 'B': move_cursor_down( e );break;
+				case 'C': move_cursor_right( e );break;
+				case 'D': move_cursor_left( e );break;
 				default: 
 				{
 					e->mode = NORMAL;
@@ -742,11 +742,11 @@ void events_normal( Editor * e )
 				temp = getch();
 			switch( temp )
 			{
-				case 'A': move_cursor_up( e );
-				case 'B': move_cursor_down( e );
-				case 'C': move_cursor_right( e );
-				case 'D': move_cursor_left( e );
-				default: e->mode = NORMAL;
+				case 'A': move_cursor_up( e );break;
+				case 'B': move_cursor_down( e );break;
+				case 'C': move_cursor_right( e );break;
+				case 'D': move_cursor_left( e );break;
+				default: e->mode = NORMAL;break;
 			}
 		}break;
 		case CTRL_KEY('s'):
