@@ -10,7 +10,7 @@ this editor works only on linux.
 
 
 
-#Installation
+##Installation
 ```
     git clone https://github.com/schnerg/tied
     cd tied/
@@ -20,7 +20,7 @@ this editor works only on linux.
 make sure to change location of install. 
 
 
-#Usage
+##Usage
 Normal Mode:
 - o = new line and insert mode
 - i = insert mode
@@ -31,5 +31,5 @@ Normal Mode:
 Insert Mode:
 - esc = switch to normal mode
 
-#Contributing
+##Contributing
 Contributions are always welcome. :) 
