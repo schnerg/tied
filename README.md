@@ -28,8 +28,11 @@ Normal Mode:
 - ctrl q : quit
 - ctrl s : save 
 - ctrl x : quit without saving
+
+
 Insert Mode:
 - esc = switch to normal mode
 
 ##Contributing
+
 Contributions are always welcome. :) 
