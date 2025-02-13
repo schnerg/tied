@@ -22,6 +22,8 @@ void disable_raw_mode(Editor * e)
     die("tcsetattr");
 }
 
+
+
 void enable_Raw_mode(Editor *  e) {
   if (tcgetattr(STDIN_FILENO, &e->window.orig_termios) == -1) die("tcgetattr");
   struct termios raw = e->window.orig_termios;
@@ -637,14 +639,70 @@ void enter_key( Editor * e, char c )
 }
 
 
-
+//TODO: refactor to deal with commands
 void search( Editor * e )
 {
 	// move curor down to menu bar
-	// disable rawmode
+	char buff[40];
+	sprintf(buff, "\x1b[%d;%dH", e->window.rows, 13);
+	write(0,buff,strlen(buff));
 	// getstring()
-	// enable_Raw_mode 
+	int i = 0;	
+	char c; 
+	char back = '\b';
+	while( ( c = getch() ) != 13 && i < 40 )	
+	{	
+		if ( c == 127 )// backspace
+		{
+			if(i > 0)
+			{
+				i--;
+				write(STDOUT_FILENO, &back, 1);
+				write(STDOUT_FILENO, " ", 1);
+				write(STDOUT_FILENO, &back, 1);
+			}
+		}
+		else if( isprint( c ) )
+		{
+			write(STDOUT_FILENO, &c, 1);
+			buff[i] = c;
+			i++;
+		}
+	}
+	buff[i] = '\0';
 	// search()
+	char * index = NULL;
+	for( int i = e->cursor.y_index; i < e->lines.count; i++ )
+	{
+		index = strstr( e->lines.list_of_lienes[i]->data, buff );
+		if( index != NULL )
+		{
+			e->cursor.y_index = i; 
+			e->cursor.index = index - e->lines.list_of_lienes[i]->data;
+			e->cursor.last_index = e->cursor.index;
+			e->cursor.last_x_offset = e->cursor.x_offset;
+			render( e ); 
+			break;	
+		}
+	}
+	if(index== NULL)
+	{
+		set_debug_message( e, "reached bottom: searching from top" );	
+		for( int i = 0; i < e->cursor.y_index; i++ )
+		{
+			index = strstr( e->lines.list_of_lienes[i]->data, buff );
+			if( index != NULL )
+			{
+				e->cursor.y_index = i; 
+				e->cursor.index = index - e->lines.list_of_lienes[i]->data;
+				e->cursor.last_index = e->cursor.index;
+				e->cursor.last_x_offset = e->cursor.x_offset;
+				render( e ); 
+				break;	
+			}
+		}
+	}
+	render( e ); 
 	return;
 }
 
@@ -740,7 +798,7 @@ void events_normal( Editor * e )
 		case '/':
 		{
 			search( e );
-		}
+		}break;
 		case 'o':
 		{
 			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
