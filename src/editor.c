@@ -304,7 +304,7 @@ void correct_string_becuase_of_tabs(Editor * e,char * string_to_print, char * bu
 }
 
 
-Buff *  init_buffer(void )
+Buff * init_buffer(void )
 {
 	Buff * buff = calloc(1,sizeof(Buff));
 	buff->count = 0;

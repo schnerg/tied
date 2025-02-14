@@ -13,18 +13,13 @@
 #include <unistd.h>
 
 
+
 typedef struct
 {
 	char * contents;
 	int  count;
 	int  copacity;
 }Buff;
-
-
-
-
-
-
 
 typedef struct Line_data
 {
@@ -69,28 +64,24 @@ typedef struct
 
 typedef struct
 {
+	
+	//undo_redo_stuffs
+	Buff line_buff;
 
 	enum modes
 	{
 		NORMAL,
 		INSERT
 	}mode;
-
 	//int mode;
-
-
 	Cursor cursor;
-	
-
-
 //line stuff
 	Lines_data lines;
 	int tabs;
 	int tabs_space;
 	int line_nums;
-	//editor settings
 	
-
+	//editor settings
 	bool saved;
 	char debug_message[40];
 	char file_name[255];
