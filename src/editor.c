@@ -5,6 +5,8 @@
 
 
 
+void update_and_print_ui( Editor * e );
+
 
 void die(const char *s)
 {
@@ -110,6 +112,7 @@ void save_file(Editor *e )
 	fclose(fp);
 	set_debug_message(e,": file saved");
 	e->saved = true;
+	update_and_print_ui( e );	
 	return;
 }
 
@@ -453,12 +456,17 @@ void print_mode(Editor *e)
 	return;
 }
 
+void update_and_print_ui( Editor * e )
+{
+	print_mode(e);
+	print_cursor(e); // reset cursor to index
+}
+
 void render(Editor*e)
 {
 	update_cursor(e);
 	print_chars_to_screen(e);
-	print_mode(e);
-	print_cursor(e);
+	update_and_print_ui( e );
 	return;
 }
 
@@ -641,20 +649,27 @@ void enter_key( Editor * e, char c )
 	return;
 }
 
-
 //TODO: refactor to deal with commands
 void search( Editor * e )
 {
+	set_debug_message( e, "" );
+	update_and_print_ui( e );
 	// move curor down to menu bar
 	char buff[40];
-	sprintf(buff, "\x1b[%d;%dH", e->window.rows, 13);
-	write(0,buff,strlen(buff));
+	sprintf( buff, "\x1b[%d;%dH", e->window.rows, 13 );
+	write( 0, buff, strlen( buff ) );
 	// getstring()
 	int i = 0;	
 	char c; 
 	char back = '\b';
 	while( ( c = getch() ) != 13 && i < 40 )	
-	{	
+	{
+		if( c == 27 ) // escape 
+		{
+			set_debug_message( e, "" );
+			render( e );
+			return;
+		}
 		if ( c == 127 )// backspace
 		{
 			if(i > 0)
@@ -688,7 +703,7 @@ void search( Editor * e )
 			break;	
 		}
 	}
-	if(index== NULL)
+	if( index == NULL )
 	{
 		set_debug_message( e, "reached bottom: searching from top" );	
 		for( int i = 0; i < e->cursor.y_index; i++ )
@@ -704,8 +719,15 @@ void search( Editor * e )
 				break;	
 			}
 		}
+		if( index == NULL )
+		{
+			char message[40];
+			snprintf( message, 40, "Pattern not found: %s", buff );
+			set_debug_message( e, message );
+			render( e );
+		}
 	}
-	render( e ); 
+	//render( e ); 
 	return;
 }
 
@@ -777,6 +799,7 @@ void events_insert( Editor * e )
 				{
 					e->mode = NORMAL;
 					update_cursor( e );
+					update_and_print_ui( e );
 				}break;
 			}
 		}break;
@@ -784,7 +807,7 @@ void events_insert( Editor * e )
 		case 127: backspace(e,c); break;
 		default:
 		{
-			if(isprint(c) ||c=='\t')
+			if( isprint( c ) || c== '\t' )
 				insert_char(e,c);
 			render(e);
 		}break;
@@ -820,7 +843,7 @@ void events_normal( Editor * e )
 				case 'B': move_cursor_down( e );break;
 				case 'C': move_cursor_right( e );break;
 				case 'D': move_cursor_left( e );break;
-				default: e->mode = NORMAL;break;
+				default: e->mode = NORMAL; break;
 			}
 		}break;
 		case CTRL_KEY( 'c'):
@@ -853,8 +876,7 @@ void events_normal( Editor * e )
 		case 'h': move_cursor_left( e ); break;
 		case 'l': move_cursor_right( e );break;
 	}
-	
-		return;
+	return;
 }
 
 
@@ -873,7 +895,6 @@ void events( Editor * e )
 	}
 	if( get_window_size( e ) )
 		adjust( e );
-
 	return;
 }
 
