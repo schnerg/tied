@@ -257,7 +257,7 @@ void update_cursor(Editor * e)
 			{
 				e->cursor.x_offset -= e->window.cols - (e->tabs * TAB_STOP) - e->line_nums;
 			}
-		if(e->cursor.x_offset <0)
+		if( e->cursor.x_offset <0 )
 			e->cursor.x_offset = 0;
 	}
 	char bar[] = "\e[5 q"	;
@@ -809,7 +809,7 @@ void events_insert( Editor * e )
 		{
 			if( isprint( c ) || c== '\t' )
 				insert_char(e,c);
-			render(e);
+			//render(e);
 		}break;
 	}
 	return;
@@ -831,7 +831,12 @@ void events_normal( Editor * e )
 			enter_key(e,c);
 			e->mode = INSERT;
 		}break;
-		case 'i': e->mode = INSERT; break;
+		case 'i':
+		{
+			e->mode = INSERT;
+			update_cursor( e );
+			update_and_print_ui( e );
+		}break;
 		case 27: // escape
 		{
 			char temp;
