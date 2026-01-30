@@ -8,44 +8,44 @@
 void update_and_print_ui( Editor * e );
 
 
-void die(const char *s)
+void die( const char *s )
 {
 	perror(s);
 	exit(1);
 }
 
-void set_debug_message(Editor *e,char * s)
+void set_debug_message( Editor *e, char * s )
 {
-	strcpy(e->debug_message, s);
+	strcpy( e->debug_message, s );
 	return;
 }
 
-void disable_raw_mode(Editor * e)
+void disable_raw_mode( Editor * e )
 {
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1)
-    die("tcsetattr");
+	if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
+  	die( "tcsetattr" );
 }
 
 
 
-void enable_Raw_mode(Editor *  e) {
-  if (tcgetattr(STDIN_FILENO, &e->window.orig_termios) == -1) die("tcgetattr");
+void enable_Raw_mode( Editor *  e ) {
+  if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
   struct termios raw = e->window.orig_termios;
-  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-  raw.c_oflag &= ~(OPOST);
-  raw.c_cflag |= (CS8);
-  raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+  raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
+  raw.c_oflag &= ~( OPOST );
+  raw.c_cflag |= ( CS8 );
+  raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 1;
-  if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) die("tcsetattr");
+  if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
 }
 
 
-bool get_window_size(Editor *e)
+bool get_window_size( Editor * e )
 {
 	struct winsize w;
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	if(e->window.rows!= w.ws_row || e->window.cols != w.ws_col)
+	ioctl( STDOUT_FILENO, TIOCGWINSZ, &w );
+	if( e->window.rows!= w.ws_row || e->window.cols != w.ws_col )
 	{
 		e->window.rows =  w.ws_row;
 		e->window.cols = w.ws_col;
@@ -55,11 +55,9 @@ bool get_window_size(Editor *e)
 } 
 
 
-
-
 void realloc_data( Line_data * temp )
 {
-	temp->copacity *=2;
+	temp->copacity *= 2;
 	temp->data = realloc( temp->data, temp->copacity * sizeof( char ) );
 }
 
@@ -67,8 +65,8 @@ void realloc_data( Line_data * temp )
 void init_line(Editor * e,Line_data * temp)
 {
 	e->lines.count++;
-	temp->next = calloc(1,sizeof(Line_data));
-	temp->next->data = calloc(50,sizeof(char));
+	temp->next = calloc( 1, sizeof( Line_data ) );
+	temp->next->data = calloc( 50, sizeof( char ) );
 	temp->next->copacity = 50;
 	temp->next->count = 0;
 	temp->next->next = NULL;
@@ -80,7 +78,7 @@ void resize_list( Editor * e )
 	if( e->lines.list_of_lienes == NULL )
 	{
 		e->lines.copacity = 10;
-		e->lines.list_of_lienes = calloc(e->lines.copacity,sizeof(Line_data*));
+		e->lines.list_of_lienes = calloc( e->lines.copacity, sizeof( Line_data* ) );
 	}
 	else
 	{
@@ -94,36 +92,37 @@ void resize_list( Editor * e )
 }
 
 
-void save_file(Editor *e )
+void save_file( Editor * e )
 {
-	FILE * fp = fopen(e->file_name,"w");
-	if(fp==NULL) die("file read failed?");
+	FILE * fp = fopen( e->file_name, "w" );
+	if( fp == NULL ) die( "file read failed?" );
 	Line_data * temp = e->lines.head;
-	for(int row =0; row < e->lines.count;row++)
+	for( int row = 0; row < e->lines.count; row++ )
 	{
-		for(int col =0; col < temp->count ;col++)
+		for( int col =0; col < temp->count; col++ )
 		{
-			fputc(temp->data[col],fp);
+			fputc( temp->data[col], fp );
 		}
 		temp = temp->next;
-		if(row < e->lines.count )
-			fputc('\n',fp);
+		if( row < e->lines.count )
+			fputc( '\n', fp );
 	}
-	fclose(fp);
-	set_debug_message(e,": file saved");
+	fclose( fp );
+	set_debug_message( e, ": file saved" );
 	e->saved = true;
 	update_and_print_ui( e );	
 	return;
 }
 
-void save_file_name(Editor * e, char * file_name)
+
+void save_file_name( Editor * e, char * file_name )
 {
-	if(strlen(file_name) < 255)
+	if( strlen( file_name ) < 255 )
 	{
-		strcpy(e->file_name,file_name);	
+		strcpy( e->file_name, file_name );	
 	}
 	else 
-		die("lenght of filename is too long");
+		die( "lenght of filename is too long" );
 	return;
 }
 
@@ -142,7 +141,7 @@ int read_file( Editor *e, char * file_name )
 	e->lines.head->copacity = 50;
 	Line_data * prev = e->lines.head;
 	Line_data * temp = e->lines.head;
-	e->lines.list_of_lienes[ e->lines.count - 1 ] = temp;
+	e->lines.list_of_lienes[e->lines.count - 1] = temp;
 	resize_list( e );
 	FILE * fp = fopen( file_name, "r" );
 	if( fp == NULL )
@@ -177,16 +176,16 @@ int read_file( Editor *e, char * file_name )
 
 
 
-void init_cursor(Editor * e)
+void init_cursor( Editor * e )
 {
-	e->cursor.rx=0;
-	e->cursor.y_index=0;
-	e->cursor.last_index=0;
-	e->cursor.index=0;
+	e->cursor.rx = 0;
+	e->cursor.y_index = 0;
+	e->cursor.last_index = 0;
+	e->cursor.index = 0;
 	e->cursor.last_x_offset = 0;	
 	e->cursor.last_y_offset = 0;	
-	e->cursor.x_offset =0;
-	e->cursor.y_offset =0;
+	e->cursor.x_offset = 0;
+	e->cursor.y_offset = 0;
 	return;
 }
 
@@ -198,64 +197,64 @@ void init_settings(Editor *e)
 }
 void init( Editor * e, char * file_name )
 {
-	enable_Raw_mode(e);
-	init_settings(e);
-	get_window_size(e);
-	set_debug_message(e,"");
-	e->done =false;
-	e->tabs =0;
-	e->tabs_space =0;
-	if(read_file(e,file_name))
+	enable_Raw_mode( e );
+	init_settings( e );
+	get_window_size( e );
+	set_debug_message( e, "" );
+	e->done = false;
+	e->tabs = 0;
+	e->tabs_space = 0;
+	if( read_file( e, file_name ) )
 	{
-		set_debug_message(e,": new buffer created");
+		set_debug_message( e, ": new buffer created" );
 	}
-	init_cursor(e);
+	init_cursor( e );
 	return;	
 }
 
 
-void index_to_rx(Editor *e)
+void index_to_rx( Editor * e )
 {
 	e->cursor.rx =0;
-	for(int i =e->cursor.x_offset; i < e->cursor.index ;i++)
+	for( int i = e->cursor.x_offset; i < e->cursor.index; i++ )
 	{ 
-		if(e->lines.list_of_lienes[e->cursor.y_index]->data[i] == 9)
-			e->cursor.rx += (TAB_STOP -1) - (e->cursor.rx % TAB_STOP);
+		if( e->lines.list_of_lienes[e->cursor.y_index]->data[i] == 9 )
+			e->cursor.rx += ( TAB_STOP -1 ) - ( e->cursor.rx % TAB_STOP );
 		e->cursor.rx++;
 	}
 	e->cursor.rx += e->line_nums +1;	
 	return;
 }
 
-void update(Editor * e)
+void update( Editor * e )
 {
 	char buf[40];
-	snprintf(buf,40,"%i",e->lines.count);
-	e->line_nums = strlen(buf);
+	snprintf( buf,40,"%i",e->lines.count );
+	e->line_nums = strlen( buf );
 	return;
 }
 
 
-void update_cursor(Editor * e)
+void update_cursor( Editor * e )
 {
-	update(e);
+	update( e );
 	e->cursor.index = e->cursor.last_index;
-	if(e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count)
+	if( e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count )
 	{
-		while(e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count)
+		while( e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count )
 		{
 			e->cursor.index--;
 		}
 	}
-	index_to_rx(e);
+	index_to_rx( e );
 	e->cursor.x_offset = e->cursor.last_x_offset;
 	e->cursor.y_offset = e->cursor.last_y_offset;
-	if(e->cursor.rx+ e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1)
+	if( e->cursor.rx+ e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1 )
 	{	
-		if(e->lines.list_of_lienes[e->cursor.y_index]->count-1 - e->cursor.x_offset <= 0)
-			while(e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1 && e->cursor.x_offset >0 )
+		if( e->lines.list_of_lienes[e->cursor.y_index]->count-1 - e->cursor.x_offset <= 0 )
+			while( e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1 && e->cursor.x_offset >0 )
 			{
-				e->cursor.x_offset -= e->window.cols - (e->tabs * TAB_STOP) - e->line_nums;
+				e->cursor.x_offset -= e->window.cols - ( e->tabs * TAB_STOP ) - e->line_nums;
 			}
 		if( e->cursor.x_offset <0 )
 			e->cursor.x_offset = 0;
@@ -269,15 +268,16 @@ void update_cursor(Editor * e)
 	return;
 }
 
-void print_cursor(Editor * e)
+void print_cursor( Editor * e )
 {
 	char buff[40];
-	sprintf(buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1);
-	write(0,buff,strlen(buff));
+	sprintf( buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
+	write( 0, buff, strlen( buff ) );
 	return;
 }
 
-void editorRefreshScreen() {
+void editorRefreshScreen() 
+{
 	//system("clear");
 	//"\e[?25l"
   write(STDOUT_FILENO, "\e[?25l", 6);
@@ -456,16 +456,18 @@ void print_mode(Editor *e)
 	return;
 }
 
+
 void update_and_print_ui( Editor * e )
 {
 	print_mode(e);
 	print_cursor(e); // reset cursor to index
 }
 
-void render(Editor*e)
+
+void render( Editor * e )
 {
-	update_cursor(e);
-	print_chars_to_screen(e);
+	update_cursor( e );
+	print_chars_to_screen( e );
 	update_and_print_ui( e );
 	return;
 }
@@ -476,7 +478,7 @@ void adjust(Editor * e)
 	// this is hard to read
 	if(e->cursor.index - e->cursor.x_offset > e->window.cols || e->cursor.index < e->cursor.x_offset)
 	{
-		e->cursor.x_offset =0;
+		e->cursor.x_offset = 0;
 		while(e->cursor.index - e->cursor.x_offset > e->window.cols)
 		{
 			e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums;
@@ -743,28 +745,34 @@ void move_cursor_up( Editor * e )
 	render(e);
 	return;
 }
+
+
 void move_cursor_down( Editor * e )
 {
-	if(e->cursor.y_index < e->lines.count-1)
+	if( e->cursor.y_index < e->lines.count-1 )
 		e->cursor.y_index++;
-	if(e->cursor.y_index - e->cursor.y_offset == e->window.rows -1)	
+	if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
 		e->cursor.y_offset++;
 	e->cursor.last_y_offset = e->cursor.y_offset;
 	render(e);
 	return;
 }
+
+
 void move_cursor_left( Editor * e )
 {
-	if(e->cursor.index >0)
+	if( e->cursor.index >0 )
 		e->cursor.index--;
-	if(e->cursor.rx == e->line_nums+1 && e->cursor.x_offset >0)
-		e->cursor.x_offset -= e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
-	if(e->cursor.x_offset <0) e->cursor.x_offset = 0;
+	if( e->cursor.rx == e->line_nums+1 && e->cursor.x_offset > 0 )
+		e->cursor.x_offset -= e->window.cols - ( e->tabs * TAB_STOP ) - e->line_nums; 
+	if( e->cursor.x_offset < 0 ) e->cursor.x_offset = 0;
 	e->cursor.last_index = e->cursor.index;
 	e->cursor.last_x_offset = e->cursor.x_offset;
 	render(e);
 	return;
 }
+
+
 void move_cursor_right( Editor * e )
 {
 	if(e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )

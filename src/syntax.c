@@ -179,5 +179,3 @@ void syntax_highlighting(Buff * buffer, char * str, const int len)
 	}
 	free(lexer);
 }
-
-
