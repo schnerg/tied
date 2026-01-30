@@ -131,10 +131,10 @@ int read_file( Editor *e, char * file_name )
 	e->lines.list_of_lienes = NULL;
 	resize_list( e );
 	e->lines.head = calloc( 1, sizeof( Line_data ) );
-	e->lines.count =1;
+	e->lines.count = 1;
 	e->lines.head->next=NULL;
 	e->lines.head->prev = NULL;
-	e->lines.head->data = calloc(50,sizeof(char));
+	e->lines.head->data = calloc( 50, sizeof( char ) );
 	e->lines.head->count = 0;
 	e->lines.head->copacity = 50;
 	Line_data * prev = e->lines.head;
@@ -142,32 +142,32 @@ int read_file( Editor *e, char * file_name )
 	e->lines.list_of_lienes[ e->lines.count - 1 ] = temp;
 	resize_list( e );
 	FILE * fp = fopen( file_name, "r" );
-	if(fp == NULL)
+	if( fp == NULL )
 		return 1;
 	int c;	
 	register unsigned int i = 0;
-	while((c=fgetc(fp)) !=EOF)
+	while( ( c = fgetc ( fp ) ) != EOF )
 	{
 		if(c=='\n')
 		{
 			prev = temp;
-			init_line(e,temp);
-			resize_list(e);
+			init_line( e, temp );
+			resize_list( e );
 			temp = temp->next;
 			temp->prev = prev;
 			e->lines.list_of_lienes[e->lines.count -1] = temp;
 			i=0;
 			continue;
 		}
-		if(temp->count==temp->copacity -1)
-		{
-			realloc_data(temp);
-		}
+		if( temp->count == temp->copacity -1 )
+			realloc_data( temp );
 		temp->data[i] = c;
 		temp->count++;
 		i++;
 	}
 	e->lines.count--;
+	if( e->lines.count == 0 )
+		e->lines.count++;
 	fclose(fp);
 	return 0;
 }
