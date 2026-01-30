@@ -4,6 +4,8 @@
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 
+
+
 void die(const char *s)
 {
 	perror(s);
@@ -274,7 +276,8 @@ void print_cursor(Editor * e)
 
 void editorRefreshScreen() {
 	//system("clear");
-  //write(STDOUT_FILENO, "\x1b[2J", 4);
+	//"\e[?25l"
+  write(STDOUT_FILENO, "\e[?25l", 6);
   write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
@@ -420,7 +423,7 @@ void print_chars_to_screen(Editor * e)
 			}
 		}
 	}
-	
+	append_to_buffer(buffer, "\e[?25h",6);	
 	write(STDOUT_FILENO,buffer->contents,buffer->count);
 	free(buffer->contents);
 	free(buffer);
@@ -820,6 +823,11 @@ void events_normal( Editor * e )
 				default: e->mode = NORMAL;break;
 			}
 		}break;
+		case CTRL_KEY( 'c'):
+		{
+			//shift_everything();
+		}break;
+
 		case CTRL_KEY('s'):
 		{
 				save_file( e);

@@ -2,18 +2,17 @@
 
 int main(int argc, char * argv[])
 {
-
-	if(argc>1)
+	if( argc > 1 )
 	{
-		system("clear");
+		system( "clear" );
 		Editor e;	
-		init(&e,argv[1]);
-		render(&e);
-		while(!e.done)
+		init( &e, argv[1] );
+		render( &e );
+		while( !e.done )
 		{
-			events(&e);
+			events( &e );
 		}
-		quit(&e);
+		quit( &e );
 	}
 	return 0;
 }
