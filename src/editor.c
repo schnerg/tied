@@ -693,7 +693,7 @@ void search( Editor * e )
 		}
 	}
 	buff[i] = '\0';
-	// search()
+	// search
 	char * index = NULL;
 	for( int i = e->cursor.y_index; i < e->lines.count; i++ )
 	{
@@ -704,7 +704,6 @@ void search( Editor * e )
 			e->cursor.index = index - e->lines.list_of_lienes[i]->data;
 			e->cursor.last_index = e->cursor.index;
 			e->cursor.last_x_offset = e->cursor.x_offset;
-			render( e ); 
 			break;	
 		}
 	}
@@ -720,7 +719,6 @@ void search( Editor * e )
 				e->cursor.index = index - e->lines.list_of_lienes[i]->data;
 				e->cursor.last_index = e->cursor.index;
 				e->cursor.last_x_offset = e->cursor.x_offset;
-				render( e ); 
 				break;	
 			}
 		}
@@ -729,13 +727,12 @@ void search( Editor * e )
 			char message[40];
 			snprintf( message, 40, "Pattern not found: %s", buff );
 			set_debug_message( e, message );
-			render( e );
 		}
 	}
-	//render( e ); 
+	adjust( e );
+	render( e ); 
 	return;
 }
-
 
 
 void move_cursor_up( Editor * e )
