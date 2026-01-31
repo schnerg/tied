@@ -1,7 +1,7 @@
 #include "include/syntax.h"
 
 char * keywords[] ={"break","case","continue","default","do","else","for","return","if","while","switch","sizeof","goto","bool"};
-char*  types[] = {"float","char","signed","double","int","short","long","unsigned","void"};
+char *  types[] = {"float","char","signed","double","int","short","long","unsigned","void"};
 char *storage_class[]= {"auto","const","enum","extern","register","static","struct","union" ,"volatile ","typedef"};
 
 bool word_in_keywords(char * word)
@@ -64,7 +64,7 @@ void get_next_word(lexer_t * lexer,char * buffer,const int len)
 	i++;
 	while(lexer->i<len)
 	{
-		if(strchr(",.()+-/*=~%<>[];", lexer->c) || isspace(lexer->c))
+		if(strchr(",.()+-/*=~%<>[];:", lexer->c) || isspace(lexer->c))
 			break;
 		buffer[i] = lexer->c;
 		advance_lexer(lexer);

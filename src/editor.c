@@ -472,16 +472,18 @@ void render( Editor * e )
 	return;
 }
 
+
+//so adjust_yx_offsets
 void adjust(Editor * e)
 {
 	// when window resizes, adjust x_offset so that cursor is still on screen in proper pos;
 	// this is hard to read
-	if(e->cursor.index - e->cursor.x_offset > e->window.cols || e->cursor.index < e->cursor.x_offset)
+	if( e->cursor.index - e->cursor.x_offset > e->window.cols || e->cursor.index < e->cursor.x_offset )
 	{
 		e->cursor.x_offset = 0;
-		while(e->cursor.index - e->cursor.x_offset > e->window.cols)
+		while( e->cursor.index - e->cursor.x_offset > e->window.cols)
 		{
-			e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums;
+			e->cursor.x_offset += e->window.cols - ( e->tabs * TAB_STOP ) - e->line_nums;
 		}
 	}
 	e->cursor.last_x_offset = e->cursor.x_offset;
@@ -494,7 +496,8 @@ void adjust(Editor * e)
 			e->cursor.y_offset += e->window.rows;
 		e->cursor.last_y_offset = e->cursor.y_offset;
 	}
-		e->cursor.last_y_offset = e->cursor.y_offset;
+	e->cursor.last_y_offset = e->cursor.y_offset;
+	return;
 }
 
 
@@ -631,8 +634,8 @@ void move_cursor_down( Editor * e );
 
 void enter_key( Editor * e, char c )
 {
-	Line_data* temp = e->lines.list_of_lienes[ e->cursor.y_index ];
-	char buff[ temp->count - e->cursor.index ];
+	Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
+	char buff[temp->count - e->cursor.index];
 		int j =0;
 	for( int i = e->cursor.index; i < temp->count; i++ )
 	{
@@ -641,12 +644,12 @@ void enter_key( Editor * e, char c )
 	}
 	add_new_line( e, buff, j );
 	temp->count = e->cursor.index;
-	e->cursor.index = 0;
 	e->lines.count++;
 	e->saved = false;
 	list_of_lienes( e );
 	move_cursor_down( e );	
-	adjust( e );
+	e->cursor.index = 0;
+	adjust( e ); // adjust what?
 	render( e );
 	return;
 }
@@ -737,12 +740,12 @@ void search( Editor * e )
 
 void move_cursor_up( Editor * e )
 {
-	if(e->cursor.y_index >0)
+	if( e->cursor.y_index > 0 )
 		e->cursor.y_index--;
 	if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
 		e->cursor.y_offset--;
 	e->cursor.last_y_offset = e->cursor.y_offset;
-	render(e);
+	render( e );
 	return;
 }
 
@@ -754,7 +757,7 @@ void move_cursor_down( Editor * e )
 	if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
 		e->cursor.y_offset++;
 	e->cursor.last_y_offset = e->cursor.y_offset;
-	render(e);
+	render( e );
 	return;
 }
 
@@ -775,9 +778,9 @@ void move_cursor_left( Editor * e )
 
 void move_cursor_right( Editor * e )
 {
-	if(e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
+	if( e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
 		e->cursor.index++;
-	if(e->cursor.rx >= e->window.cols)			
+	if( e->cursor.rx >= e->window.cols)			
 		e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
 	e->cursor.last_index = e->cursor.index;
 	e->cursor.last_x_offset = e->cursor.x_offset;
@@ -811,12 +814,12 @@ void events_insert( Editor * e )
 				}break;
 			}
 		}break;
-		case 13: enter_key(e,c);break; //enter key
-		case 127: backspace(e,c); break;
+		case 13: enter_key( e, c );break; //enter key
+		case 127: backspace( e, c ); break;
 		default:
 		{
 			if( isprint( c ) || c== '\t' )
-				insert_char(e,c);
+				insert_char( e, c );
 			//render(e);
 		}break;
 	}
@@ -836,7 +839,7 @@ void events_normal( Editor * e )
 		case 'o':
 		{
 			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
-			enter_key(e,c);
+			enter_key( e, c );
 			e->mode = INSERT;
 		}break;
 		case 'i':
