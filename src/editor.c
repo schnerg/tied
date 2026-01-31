@@ -837,6 +837,7 @@ void events_normal( Editor * e )
 			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
 			enter_key( e, c );
 			e->mode = INSERT;
+			update_cursor( e );
 		}break;
 		case 'i':
 		{
