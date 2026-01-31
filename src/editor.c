@@ -587,7 +587,6 @@ void backspace(Editor* e,char c)
 		remove_line( e );
 		list_of_lienes( e );
 		e->cursor.y_index--;
-		system( "clear" );
 	}
 	adjust( e );
 	render( e );
