@@ -1,8 +1,8 @@
 #include "include/editor.h"
 
+
 #define TAB_STOP 4
 #define CTRL_KEY(k) ((k) & 0x1f)
-
 
 
 void update_and_print_ui( Editor * e );
@@ -23,11 +23,13 @@ void die( const char *s )
 	return;
 }
 
+
 void set_debug_message( Editor *e, char * s )
 {
 	strcpy( e->debug_message, s );
 	return;
 }
+
 
 void disable_raw_mode( Editor * e )
 {
@@ -35,7 +37,6 @@ void disable_raw_mode( Editor * e )
   	die( "tcsetattr" );
 	return;
 }
-
 
 
 void enable_Raw_mode( Editor *  e ) {
@@ -210,6 +211,16 @@ void init_settings( Editor * e )
 }
 
 
+void save_line_buffer_to_line( Editor * e )
+{
+	while( e->line_buff->count >= e->lines.list_of_lienes[e->cursor.y_index]->copacity )
+		realloc_data( e->lines.list_of_lienes[e->cursor.y_index] );
+	memcpy( e->lines.list_of_lienes[e->cursor.y_index]->data, e->line_buff->contents, e->line_buff->count );
+	e->lines.list_of_lienes[e->cursor.y_index]->count = e->line_buff->count;
+	return;
+}
+
+
 void update_line_buffer( Editor * e )
 {
 	update_buffer( e->line_buff );	
@@ -223,7 +234,6 @@ void init_line_buffer( Editor * e )
 	update_line_buffer( e );	
 	return;
 }
-
 
 
 void init( Editor * e, char * file_name )
@@ -301,6 +311,7 @@ void update_cursor( Editor * e )
 	return;
 }
 
+
 void print_cursor( Editor * e )
 {
 	char buff[40];
@@ -309,13 +320,15 @@ void print_cursor( Editor * e )
 	return;
 }
 
+
 void editorRefreshScreen() 
 {
 	//system("clear");
 	//"\e[?25l"
-  write(STDOUT_FILENO, "\e[?25l", 6);
-  write(STDOUT_FILENO, "\x1b[H", 3);
+  write(STDOUT_FILENO, "\e[?25l", 6); // hide cursor
+  write(STDOUT_FILENO, "\x1b[H", 3); // move cursor to top left of screen
 }
+
 
 void correct_string_becuase_of_tabs(Editor * e,char * string_to_print, char * buff)
 { 
@@ -516,7 +529,6 @@ void render( Editor * e )
 	return;
 }
 
-
 //so adjust_yx_offsets
 void adjust(Editor * e)
 {
@@ -553,6 +565,7 @@ char getch()
   return c;
 }
 
+
 void insert_char_to_buff( Editor * e, char c )
 {
 	Buff * temp = e->line_buff;
@@ -574,6 +587,7 @@ void insert_char_to_buff( Editor * e, char c )
 	render(e);
 	return;
 }
+
 
 void insert_char(Editor * e, char c)
 {
@@ -639,21 +653,27 @@ void backspace(Editor* e,char c)
 	if( e->cursor.index > 0 )
 	{
 		e->cursor.index--;	
-		Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
+		//Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
+		Buff * temp = e->line_buff;
 		temp->count--;	
 		for( int i = e->cursor.index; i < temp->count; i++ )
 		{
-			temp->data[i] = temp->data[i+1];
+			temp->contents[i] = temp->contents[i+1];
 		}
 	}
+
+	//needs to be fixed for buff!
 	else if( e->cursor.y_index > 0 )
 	{
 		e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;
+		save_line_buffer_to_line( e );
 		remove_line( e );
 		list_of_lienes( e );
-		e->cursor.y_index--;
+		e->cursor.y_index--;	
+		update_line_buffer( e );
 	}
+
 	adjust( e );
 	render( e );
 	return;
@@ -700,6 +720,7 @@ void move_cursor_down( Editor * e );
 void enter_key( Editor * e, char c )
 {
 	Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
+	
 	char buff[temp->count - e->cursor.index];
 		int j =0;
 	for( int i = e->cursor.index; i < temp->count; i++ )
@@ -712,6 +733,7 @@ void enter_key( Editor * e, char c )
 	e->lines.count++;
 	e->saved = false;
 	list_of_lienes( e );
+	update_line_buffer( e );	
 	move_cursor_down( e );	
 	e->cursor.index = 0;
 	adjust( e ); // adjust what?
@@ -799,30 +821,37 @@ void search( Editor * e )
 	return;
 }
 
-// update line_buff
+
 void move_cursor_up( Editor * e )
 {
 	if( e->cursor.y_index > 0 )
+	{
+		if( e->mode == INSERT )
+			save_line_buffer_to_line( e );
 		e->cursor.y_index--;
-	if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
-		e->cursor.y_offset--;
-	e->cursor.last_y_offset = e->cursor.y_offset;
-	update_line_buffer( e );
-	render( e );
+		if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
+			e->cursor.y_offset--;
+		e->cursor.last_y_offset = e->cursor.y_offset;
+		update_line_buffer( e );
+		render( e );
+	}
 	return;
 }
 
 
-// update line_buff
 void move_cursor_down( Editor * e )
 {
-	if( e->cursor.y_index < e->lines.count-1 )
+	if( e->cursor.y_index < e->lines.count - 1 )
+	{
+		if( e->mode == INSERT )
+			save_line_buffer_to_line( e );
 		e->cursor.y_index++;
-	if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
-		e->cursor.y_offset++;
-	e->cursor.last_y_offset = e->cursor.y_offset;
-	update_line_buffer( e );
-	render( e );
+		if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
+			e->cursor.y_offset++;
+		e->cursor.last_y_offset = e->cursor.y_offset;
+		update_line_buffer( e );
+		render( e );
+	}
 	return;
 }
 
@@ -875,6 +904,7 @@ void events_insert( Editor * e )
 				default: 
 				{
 					e->mode = NORMAL;
+					save_line_buffer_to_line( e );
 					update_cursor( e );
 					update_and_print_ui( e );
 				}break;
@@ -936,6 +966,7 @@ void events_normal( Editor * e )
 
 		case CTRL_KEY('s'):
 		{
+				save_line_buffer_to_line( e );
 				save_file( e);
 				e->saved = true;
 		}break;
@@ -995,8 +1026,8 @@ void quit(Editor * e)
 	}
 	write(STDOUT_FILENO, "\x1b[2J", 4);
 	write(STDOUT_FILENO, "\x1b[H", 3);
+	free( e->line_buff->contents );
+	free( e->line_buff );
 	disable_raw_mode(e);
 	return;
 }
-
-
