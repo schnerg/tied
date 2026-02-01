@@ -10,6 +10,12 @@ Buff * init_buffer( void );
 void append_to_buffer( Buff * buff, char * str, int size );
 
 
+void update_buffer( Buff * buff )
+{
+	buff->count = 0;
+	return;
+}
+
 void die( const char *s )
 {
 	perror(s);
@@ -199,12 +205,20 @@ void init_settings( Editor * e )
 }
 
 
+void update_line_buffer( Editor * e )
+{
+	update_buffer( e->line_buff );	
+	append_to_buffer( e->line_buff, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
+	return;
+}
+
 void init_line_buffer( Editor * e )
 {
 	e->line_buff = init_buffer();
-	append_to_buffer( e->line_buff, "Hello, buffer! :D", 17 );
+	update_line_buffer( e );	
 	return;
 }
+
 
 
 void init( Editor * e, char * file_name )
@@ -342,19 +356,17 @@ void resize_buffer(Buff * buff)
 }
 
 
-void append_to_buffer(Buff * buff,char * str, int size)
+void append_to_buffer( Buff * buff, char * str, int size )
 {
-	while(buff->count + size >= buff->copacity-1)
+	while( buff->count + size >= buff->copacity - 1 )
 			resize_buffer(buff);
 	int j = buff->count;
-	//I dont' under stand what is wrong with this code!	
-	
-	for(int i =0; i < size; i++)
+	for( int i = 0; i < size; i++ )
 	{
 		buff->contents[j] = str[i];
 		j++;
 	}
-	buff->contents[j]='\0';
+	buff->contents[j] = '\0';
 	buff->count += size;
 }
 
@@ -769,6 +781,7 @@ void move_cursor_up( Editor * e )
 	if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
 		e->cursor.y_offset--;
 	e->cursor.last_y_offset = e->cursor.y_offset;
+	update_line_buffer( e );
 	render( e );
 	return;
 }
@@ -782,6 +795,7 @@ void move_cursor_down( Editor * e )
 	if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
 		e->cursor.y_offset++;
 	e->cursor.last_y_offset = e->cursor.y_offset;
+	update_line_buffer( e );
 	render( e );
 	return;
 }
