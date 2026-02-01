@@ -12,6 +12,9 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "py_list.h"
+
+
 
 typedef struct
 {
@@ -65,7 +68,13 @@ typedef struct
 	
 	//undo_redo_stuffs
 	Buff * line_buff;
-	
+	py_list_t * undo_list;
+	py_list_t * redo_list;
+	bool can_undo;	
+	bool can_redo;	
+
+
+
 	//int mode;
 	enum modes
 	{

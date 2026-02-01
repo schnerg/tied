@@ -211,7 +211,13 @@ void init_settings( Editor * e )
 }
 
 
-void save_line_buffer_to_line( Editor * e )
+void save_changes_to_undo_redo_buffer()
+{
+	return;
+}
+
+
+void write_line_buffer_to_line( Editor * e )
 {
 	while( e->line_buff->count >= e->lines.list_of_lienes[e->cursor.y_index]->copacity )
 		realloc_data( e->lines.list_of_lienes[e->cursor.y_index] );
@@ -223,6 +229,7 @@ void save_line_buffer_to_line( Editor * e )
 
 void update_line_buffer( Editor * e )
 {
+	// line = e->cursor.y_index - e->cursor.y_offset + 1
 	update_buffer( e->line_buff );	
 	append_to_buffer( e->line_buff, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
 	return;
@@ -416,7 +423,7 @@ void print_chars_to_screen(Editor * e)
 			tabs = 0;
 			i = 0;
 			//buffer stuff!	
-			if( y == e->cursor.y_index )
+			if( y == e->cursor.y_index - e->cursor.y_offset )
 				for( int x = e->cursor.x_offset; x < e->window.cols + e->cursor.x_offset && x < e->line_buff->count ; x++ )
 				{
 					buff[i] = e->line_buff->contents[x];
@@ -667,7 +674,7 @@ void backspace(Editor* e,char c)
 	{
 		e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;
-		save_line_buffer_to_line( e );
+		write_line_buffer_to_line( e );
 		remove_line( e );
 		list_of_lienes( e );
 		e->cursor.y_index--;	
@@ -827,7 +834,7 @@ void move_cursor_up( Editor * e )
 	if( e->cursor.y_index > 0 )
 	{
 		if( e->mode == INSERT )
-			save_line_buffer_to_line( e );
+			write_line_buffer_to_line( e );
 		e->cursor.y_index--;
 		if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
 			e->cursor.y_offset--;
@@ -844,7 +851,7 @@ void move_cursor_down( Editor * e )
 	if( e->cursor.y_index < e->lines.count - 1 )
 	{
 		if( e->mode == INSERT )
-			save_line_buffer_to_line( e );
+			write_line_buffer_to_line( e );
 		e->cursor.y_index++;
 		if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
 			e->cursor.y_offset++;
@@ -904,7 +911,7 @@ void events_insert( Editor * e )
 				default: 
 				{
 					e->mode = NORMAL;
-					save_line_buffer_to_line( e );
+					write_line_buffer_to_line( e );
 					update_cursor( e );
 					update_and_print_ui( e );
 				}break;
@@ -966,7 +973,7 @@ void events_normal( Editor * e )
 
 		case CTRL_KEY('s'):
 		{
-				save_line_buffer_to_line( e );
+				write_line_buffer_to_line( e );
 				save_file( e);
 				e->saved = true;
 		}break;
