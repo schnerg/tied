@@ -21,7 +21,18 @@ typedef struct
 	char * contents;
 	int  count;
 	int  copacity;
+	int lines_changed;
 }Buff;
+
+
+typedef struct
+{
+	bool line_added;
+	bool line_deleted;
+	int line_num;
+	int lines_changed;
+	Buff * data;
+}Change;
 
 
 typedef struct Line_data
@@ -68,13 +79,11 @@ typedef struct
 	
 	//undo_redo_stuffs
 	Buff * line_buff;
-	py_list_t * undo_list;
-	py_list_t * redo_list;
+	py_list_t * undo_stack;
+	py_list_t * redo_stack;
 	bool can_undo;	
 	bool can_redo;	
-
-
-
+	
 	//int mode;
 	enum modes
 	{

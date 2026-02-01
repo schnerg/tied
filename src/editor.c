@@ -8,15 +8,16 @@
 void update_and_print_ui( Editor * e );
 Buff * init_buffer( void );
 void append_to_buffer( Buff * buff, char * str, int size );
+void add_new_line( Editor * e, char * data, int size_of_data );
 
 
-void update_buffer( Buff * buff )
+void reset_buffer( Buff * buff )
 {
 	buff->count = 0;
 	return;
 }
 
-void die( const char *s )
+void die( const char * s )
 {
 	perror(s);
 	exit(1);
@@ -210,19 +211,93 @@ void init_settings( Editor * e )
 	return;
 }
 
-
-void save_changes_to_undo_redo_buffer()
+/*
+void push_insert_to_undo_stack( Editor * e )
 {
+	Change * change = calloc( 1, sizeof( Change ) );
+	change->data = init_buffer();
+	append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index].data, e->lines.list_of_lienes[e->cursor.y_index].count );
+	change->line_num = e->cursor.y_index;
+	append_to_buffer( e->undo_stack, change );
 	return;
 }
 
 
-void write_line_buffer_to_line( Editor * e )
+void push_del_line_to_undo_stack( Editor * e )
 {
-	while( e->line_buff->count >= e->lines.list_of_lienes[e->cursor.y_index]->copacity )
+	Change * change = calloc( 1, sizeof( Change ) );
+	change->line_deleted = true;
+	change->data = init_buffer();
+	append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index].data, e->lines.list_of_lienes[e->cursor.y_index].count );
+	change->line_num = e->cursor.y_index;
+	append_to_buffer( e->undo_stack, change );
+	return;
+}
+
+
+void push_change_to_undo_stack( Editor * e, bool line_deleted, bool line_added )
+{
+	Change * change = calloc( 1, sizeof( Change ) );
+	if( line_deleted )
+	{
+		change->line_deleted = true;
+		change->lines_changed = e->line_buff.lines_changed;
+	}
+	if( line_added )
+	{
+		return;
+	}
+	return;
+}
+*/
+
+
+/*
+void push_to_undo_stack( Editor * e, bool line_deleted, bool line_added )
+{
+	Change * change = calloc( 1, sizeof( Change ) );
+	if( line_deleted )
+	{
+		change->line_deleted = true;
+		change->data = init_buffer();
+		append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index].data, e->lines.list_of_lienes[e->cursor.y_index].count );
+	}
+
+	if( line_added )
+		change->line_added= true;
+	
+	change->line_num = e->cursor.y_index;
+	return;
+}
+*/
+
+
+void write_line_buffer_to_line( Editor * e, Buff * buff )
+{
+	while( buff->count >= e->lines.list_of_lienes[e->cursor.y_index]->copacity )
 		realloc_data( e->lines.list_of_lienes[e->cursor.y_index] );
-	memcpy( e->lines.list_of_lienes[e->cursor.y_index]->data, e->line_buff->contents, e->line_buff->count );
-	e->lines.list_of_lienes[e->cursor.y_index]->count = e->line_buff->count;
+	memcpy( e->lines.list_of_lienes[e->cursor.y_index]->data, buff->contents, buff->count );
+	e->lines.list_of_lienes[e->cursor.y_index]->count = buff->count;
+	return;
+}
+
+//this will probably work!
+void undo_change( Editor * e )
+{
+	if( e->undo_stack->items[0] )
+	{
+		Change * change = e->undo_stack->items[e->undo_stack->count];
+		int changes = change->data->lines_changed;
+		for( int i = 0; i < changes; i++ )
+		{
+			change = e->undo_stack->items[e->undo_stack->count];
+			if( !change->line_deleted && !change->line_added )
+				write_line_buffer_to_line( e, change->data );
+			else if( change->line_deleted )
+				add_new_line( e, change->data->contents, change->data->count );
+			e->undo_stack->count--;
+		}
+	}
 	return;
 }
 
@@ -230,15 +305,26 @@ void write_line_buffer_to_line( Editor * e )
 void update_line_buffer( Editor * e )
 {
 	// line = e->cursor.y_index - e->cursor.y_offset + 1
-	update_buffer( e->line_buff );	
+	reset_buffer( e->line_buff );	
 	append_to_buffer( e->line_buff, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
 	return;
 }
+
 
 void init_line_buffer( Editor * e )
 {
 	e->line_buff = init_buffer();
 	update_line_buffer( e );	
+	return;
+}
+
+
+void init_undo_redo_stacks( Editor * e )
+{
+	e->can_undo = false;
+	e->can_redo = false;
+	e->undo_stack = init_py_list( sizeof( Change * ) );
+	e->redo_stack = init_py_list( sizeof( Change * ) );
 	return;
 }
 
@@ -256,6 +342,7 @@ void init( Editor * e, char * file_name )
 		set_debug_message( e, ": new buffer created" );
 	init_cursor( e );
 	init_line_buffer( e );
+	init_undo_redo_stacks( e );
 	return;	
 }
 
@@ -369,6 +456,7 @@ Buff * init_buffer( void )
 	buff->count = 0;
 	buff->copacity = 50;
 	buff->contents = calloc(buff->copacity, sizeof(char));
+	buff->lines_changed = 0;
 	return buff;	
 }
 
@@ -620,16 +708,16 @@ void insert_char(Editor * e, char c)
 }
 
 
+
+
+//append to line buffer, not line
 void remove_line( Editor * e )
 {
 	Line_data * temp = e->lines.list_of_lienes[e->cursor.y_index];
 	Line_data * line_to_appended_to = temp->prev;
 	Line_data * next_line = temp->next;
 
-
-	//this is is pointing to the wrong address
 	line_to_appended_to->next = next_line;
-
 
 	if( next_line != NULL )
 	{
@@ -650,6 +738,7 @@ void remove_line( Editor * e )
 	free( temp );
 	return;
 }
+
 
 
 void list_of_lienes(Editor * e);
@@ -674,7 +763,7 @@ void backspace(Editor* e,char c)
 	{
 		e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;
-		write_line_buffer_to_line( e );
+		write_line_buffer_to_line( e, e->line_buff );
 		remove_line( e );
 		list_of_lienes( e );
 		e->cursor.y_index--;	
@@ -701,7 +790,7 @@ void list_of_lienes( Editor * e )
 
 void add_new_line( Editor * e, char * data, int size_of_data )
 {
-	Line_data * current_line  = e->lines.list_of_lienes[e->cursor.y_index]; // 0
+	Line_data * current_line  = e->lines.list_of_lienes[e->cursor.y_index];
 	Line_data * new_line = calloc( 1, sizeof( Line_data ) );
 	Line_data * next_line = current_line->next;
 	current_line->next = new_line;
@@ -713,9 +802,7 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 	new_line->copacity = size_of_data + 50 * 2;
 	new_line->data = calloc( new_line->copacity, sizeof( char ) );
 	for( int i = 0; i < size_of_data; i++ )
-	{
 		new_line->data[i] = data[i];
-	}
 	return;
 }
 
@@ -834,7 +921,7 @@ void move_cursor_up( Editor * e )
 	if( e->cursor.y_index > 0 )
 	{
 		if( e->mode == INSERT )
-			write_line_buffer_to_line( e );
+			write_line_buffer_to_line( e, e->line_buff );
 		e->cursor.y_index--;
 		if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
 			e->cursor.y_offset--;
@@ -851,7 +938,7 @@ void move_cursor_down( Editor * e )
 	if( e->cursor.y_index < e->lines.count - 1 )
 	{
 		if( e->mode == INSERT )
-			write_line_buffer_to_line( e );
+			write_line_buffer_to_line( e, e->line_buff );
 		e->cursor.y_index++;
 		if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
 			e->cursor.y_offset++;
@@ -911,7 +998,7 @@ void events_insert( Editor * e )
 				default: 
 				{
 					e->mode = NORMAL;
-					write_line_buffer_to_line( e );
+					write_line_buffer_to_line( e, e->line_buff );
 					update_cursor( e );
 					update_and_print_ui( e );
 				}break;
@@ -973,7 +1060,7 @@ void events_normal( Editor * e )
 
 		case CTRL_KEY('s'):
 		{
-				write_line_buffer_to_line( e );
+				write_line_buffer_to_line( e, e->line_buff );
 				save_file( e);
 				e->saved = true;
 		}break;
