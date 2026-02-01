@@ -6,6 +6,8 @@
 
 
 void update_and_print_ui( Editor * e );
+Buff * init_buffer( void );
+void append_to_buffer( Buff * buff, char * str, int size );
 
 
 void die( const char *s )
@@ -189,12 +191,22 @@ void init_cursor( Editor * e )
 	return;
 }
 
-void init_settings(Editor *e)
+void init_settings( Editor * e )
 {
 	e->saved = true;
 	e->mode = NORMAL;
 	return;
 }
+
+
+void init_line_buffer( Editor * e )
+{
+	e->line_buff = init_buffer();
+	append_to_buffer( e->line_buff, "Hello, buffer! :D", 17 );
+	return;
+}
+
+
 void init( Editor * e, char * file_name )
 {
 	enable_Raw_mode( e );
@@ -205,26 +217,28 @@ void init( Editor * e, char * file_name )
 	e->tabs = 0;
 	e->tabs_space = 0;
 	if( read_file( e, file_name ) )
-	{
 		set_debug_message( e, ": new buffer created" );
-	}
 	init_cursor( e );
+	init_line_buffer( e );
 	return;	
 }
 
 
 void index_to_rx( Editor * e )
 {
-	e->cursor.rx =0;
+	e->cursor.rx = 0;
 	for( int i = e->cursor.x_offset; i < e->cursor.index; i++ )
 	{ 
-		if( e->lines.list_of_lienes[e->cursor.y_index]->data[i] == 9 )
+
+		//if( e->lines.list_of_lienes[e->cursor.y_index]->data[i] == 9 )
+		if( e->line_buff->contents[i] == 9 )
 			e->cursor.rx += ( TAB_STOP -1 ) - ( e->cursor.rx % TAB_STOP );
 		e->cursor.rx++;
 	}
 	e->cursor.rx += e->line_nums +1;	
 	return;
 }
+
 
 void update( Editor * e )
 {
@@ -239,9 +253,9 @@ void update_cursor( Editor * e )
 {
 	update( e );
 	e->cursor.index = e->cursor.last_index;
-	if( e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count )
+	if( e->cursor.index > e->line_buff->count )
 	{
-		while( e->cursor.index > e->lines.list_of_lienes[e->cursor.y_index]->count )
+		while( e->cursor.index > e->line_buff->count )
 		{
 			e->cursor.index--;
 		}
@@ -249,10 +263,10 @@ void update_cursor( Editor * e )
 	index_to_rx( e );
 	e->cursor.x_offset = e->cursor.last_x_offset;
 	e->cursor.y_offset = e->cursor.last_y_offset;
-	if( e->cursor.rx+ e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1 )
+	if( e->cursor.rx + e->cursor.x_offset > e->line_buff->count - 1 )
 	{	
-		if( e->lines.list_of_lienes[e->cursor.y_index]->count-1 - e->cursor.x_offset <= 0 )
-			while( e->cursor.x_offset > e->lines.list_of_lienes[e->cursor.y_index]->count-1 && e->cursor.x_offset >0 )
+		if( e->line_buff->count - 1 - e->cursor.x_offset <= 0 )
+			while( e->cursor.x_offset > e->line_buff->count-1 && e->cursor.x_offset >0 )
 			{
 				e->cursor.x_offset -= e->window.cols - ( e->tabs * TAB_STOP ) - e->line_nums;
 			}
@@ -271,7 +285,7 @@ void update_cursor( Editor * e )
 void print_cursor( Editor * e )
 {
 	char buff[40];
-	sprintf( buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
+	sprintf(  buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
 	write( 0, buff, strlen( buff ) );
 	return;
 }
@@ -310,7 +324,7 @@ void correct_string_becuase_of_tabs(Editor * e,char * string_to_print, char * bu
 }
 
 
-Buff * init_buffer(void )
+Buff * init_buffer( void )
 {
 	Buff * buff = calloc(1,sizeof(Buff));
 	buff->count = 0;
@@ -354,37 +368,46 @@ int calculate_tabs_space(Editor * e,int tabs,int  line_num)
 }
 
 
-
+//TODO: rename function! >:(
 void print_chars_to_screen(Editor * e)
 {
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
-	//somehow this line below is effecting things.
 	Line_data * temp = e->lines.list_of_lienes[e->cursor.y_offset];
 	//Line_data * temp = e->lines.head;
 
-
-	char buff[e->window.cols+1];
-	int i =0;
+	char buff[e->window.cols + 1];
+	int i = 0;
 	int tabs = 0;
-	for(int y =0; y < e->window.rows-1; y++)
+	for( int y = 0; y < e->window.rows - 1; y++ )
 	{
 		if( y < e->lines.count - e->cursor.y_offset )
 		{
-			tabs=0;
-			i=0;
-			for(int x = e->cursor.x_offset; x < e->window.cols  + e->cursor.x_offset && x < temp->count ; x++)
-			{
-				buff[i] = temp->data[x];
-				if(temp->data[x] ==9)
-					tabs++;
-				i++;
-			}
-			if(tabs > e->tabs)
+			tabs = 0;
+			i = 0;
+			//buffer stuff!	
+			if( y == e->cursor.y_index )
+				for( int x = e->cursor.x_offset; x < e->window.cols + e->cursor.x_offset && x < e->line_buff->count ; x++ )
+				{
+					buff[i] = e->line_buff->contents[x];
+					if( e->line_buff->contents[x] == 9 ) // 9 == tabstop
+						tabs++;
+					i++;
+				}
+			//other line stuff	
+			else
+				for( int x = e->cursor.x_offset; x < e->window.cols  + e->cursor.x_offset && x < temp->count ; x++ )
+				{
+					buff[i] = temp->data[x];
+					if( temp->data[x] == 9 ) // 9 == tabstop
+						tabs++;
+					i++;
+				}
+			if( tabs > e->tabs )
 				e->tabs = tabs;
-			buff[i] ='\0';
+			buff[i] = '\0';
 			e->tabs_space = calculate_tabs_space(e,tabs,y+ e->cursor.y_offset);
-			
+		
 			append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
 			
 			char string_to_print[strlen(buff) + tabs *(TAB_STOP -1 ) +1];
@@ -393,33 +416,37 @@ void print_chars_to_screen(Editor * e)
 			char line_num[40];
 			snprintf(line_num,40,"%i",y +e->cursor.y_offset);
 		
-			int len = strlen(string_to_print);
+			int len = strlen( string_to_print );
 			
 			int line_padding  = e->line_nums - strlen(line_num);
 			
-			if(len >= (e->window.cols - e->line_nums - e->tabs_space)  ) len = e->window.cols -  e->line_nums - e->tabs_space +2;
+			if( len >= ( e->window.cols - e->line_nums - e->tabs_space )  ) len = e->window.cols - e->line_nums - e->tabs_space + 2;
 
-			for(int i =0; i< line_padding; i++)
+			for( int i =0; i < line_padding; i++ )
 				append_to_buffer(buffer," ",1);
 			append_to_buffer(buffer,"\033[0;33m",7);
 			append_to_buffer(buffer,line_num,strlen(line_num));
 			append_to_buffer(buffer,"\033[0m",4);
 			append_to_buffer(buffer," ",1);
 		
-			
+		
+
+			//syntax_highlighting! 
 		if(strstr(e->file_name, ".c" ))
 				syntax_highlighting(buffer,string_to_print,len);
 		else	
 			append_to_buffer(buffer,string_to_print,len);
-
-			append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
-			if(y < e->window.rows-2)
+			
+		append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
+		
+		// print new line at end of line!
+		if( y < e->window.rows - 2 )
 				append_to_buffer(buffer,"\n\r",2);
 			temp = temp->next;
 		}
 		else
 		{
-			if(y < e->window.rows-2)
+			if( y < e->window.rows - 2 )
 			{
 				append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
 				append_to_buffer(buffer,"~\n\r",3);
@@ -508,6 +535,7 @@ char getch()
   nread = read(STDIN_FILENO, &c, 1);
   return c;
 }
+
 
 void insert_char(Editor * e, char c)
 {
@@ -733,7 +761,7 @@ void search( Editor * e )
 	return;
 }
 
-
+// update line_buff
 void move_cursor_up( Editor * e )
 {
 	if( e->cursor.y_index > 0 )
@@ -746,6 +774,7 @@ void move_cursor_up( Editor * e )
 }
 
 
+// update line_buff
 void move_cursor_down( Editor * e )
 {
 	if( e->cursor.y_index < e->lines.count-1 )
@@ -760,9 +789,9 @@ void move_cursor_down( Editor * e )
 
 void move_cursor_left( Editor * e )
 {
-	if( e->cursor.index >0 )
+	if( e->cursor.index > 0 )
 		e->cursor.index--;
-	if( e->cursor.rx == e->line_nums+1 && e->cursor.x_offset > 0 )
+	if( e->cursor.rx == e->line_nums + 1 && e->cursor.x_offset > 0 )
 		e->cursor.x_offset -= e->window.cols - ( e->tabs * TAB_STOP ) - e->line_nums; 
 	if( e->cursor.x_offset < 0 ) e->cursor.x_offset = 0;
 	e->cursor.last_index = e->cursor.index;
@@ -774,9 +803,10 @@ void move_cursor_left( Editor * e )
 
 void move_cursor_right( Editor * e )
 {
-	if( e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
+	//if( e->cursor.index <= e->lines.list_of_lienes[e->cursor.y_index]->count )
+	if( e->cursor.index <= e->line_buff->count )
 		e->cursor.index++;
-	if( e->cursor.rx >= e->window.cols)			
+	if( e->cursor.rx >= e->window.cols )			
 		e->cursor.x_offset += e->window.cols - (e->tabs * TAB_STOP) - e->line_nums; 
 	e->cursor.last_index = e->cursor.index;
 	e->cursor.last_x_offset = e->cursor.x_offset;
