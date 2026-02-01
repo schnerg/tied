@@ -20,6 +20,7 @@ void die( const char *s )
 {
 	perror(s);
 	exit(1);
+	return;
 }
 
 void set_debug_message( Editor *e, char * s )
@@ -32,6 +33,7 @@ void disable_raw_mode( Editor * e )
 {
 	if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
   	die( "tcsetattr" );
+	return;
 }
 
 
@@ -46,6 +48,7 @@ void enable_Raw_mode( Editor *  e ) {
   raw.c_cc[VMIN] = 0;
   raw.c_cc[VTIME] = 1;
   if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
+	return;
 }
 
 
@@ -67,6 +70,7 @@ void realloc_data( Line_data * temp )
 {
 	temp->copacity *= 2;
 	temp->data = realloc( temp->data, temp->copacity * sizeof( char ) );
+	return;
 }
 
 
@@ -78,6 +82,7 @@ void init_line(Editor * e,Line_data * temp)
 	temp->next->copacity = 50;
 	temp->next->count = 0;
 	temp->next->next = NULL;
+	return;
 }
 
 
@@ -348,10 +353,10 @@ Buff * init_buffer( void )
 }
 
 
-void resize_buffer(Buff * buff)
+void resize_buffer( Buff * buff )
 {
 	buff->copacity *=2;
-	buff->contents = realloc(buff->contents,buff->copacity * sizeof(char));
+	buff->contents = realloc( buff->contents, buff->copacity * sizeof( char ) );
 	return;
 }
 
@@ -548,6 +553,27 @@ char getch()
   return c;
 }
 
+void insert_char_to_buff( Editor * e, char c )
+{
+	Buff * temp = e->line_buff;
+	temp->count++;
+	if( temp->count >= temp->copacity )
+		resize_buffer( temp );
+	char old;
+	int i = e->cursor.index;
+	while( i < temp->count )
+	{	
+		old = temp->contents[i];
+		temp->contents[i++] = c;
+		c = old;
+	}
+	e->cursor.index++;
+	e->saved = false;
+	set_debug_message(e,"");
+	adjust(e);
+	render(e);
+	return;
+}
 
 void insert_char(Editor * e, char c)
 {
@@ -555,7 +581,7 @@ void insert_char(Editor * e, char c)
 	temp->count++;
 	if(temp->count >= temp->copacity)
 		realloc_data( temp );
-		char old;
+	char old;
 	int i=e->cursor.index;
 	while(i< temp->count)
 	{	
@@ -859,7 +885,7 @@ void events_insert( Editor * e )
 		default:
 		{
 			if( isprint( c ) || c== '\t' )
-				insert_char( e, c );
+				insert_char_to_buff( e, c );
 			//render(e);
 		}break;
 	}
