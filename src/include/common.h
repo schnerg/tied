@@ -19,9 +19,13 @@
 typedef struct
 {
 	char * contents;
+	bool line_deleted;
+	bool line_added;
+	bool has_changed;
+	int index;
 	int  count;
 	int  copacity;
-	int lines_changed;
+	int num_lines_changed;
 }Buff;
 
 
@@ -30,7 +34,8 @@ typedef struct
 	bool line_added;
 	bool line_deleted;
 	int line_num;
-	int lines_changed;
+	int num_lines_changed;
+	int index;
 	Buff * data;
 }Change;
 
