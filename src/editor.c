@@ -1263,7 +1263,7 @@ void events_normal( Editor * e )
 		}break;
 		case 'o':
 		{
-			e->cursor.index = e->lines.list_of_lienes[e->cursor.y_index]->count;
+			e->cursor.index =	e->lines.list_of_lienes[e->cursor.y_index]->count;
 			enter_key( e, c );
 			e->mode = INSERT;
 			update_cursor( e );
@@ -1308,12 +1308,12 @@ void events_normal( Editor * e )
 		case CTRL_KEY('s'):
 		{
 				write_line_buffer_to_line( e, e->line_buff );
-				save_file( e);
+				save_file( e );
 				e->saved = true;
 		}break;
 		case CTRL_KEY('q'):
 		{
-			if(e->saved == true)
+			if( e->saved == true )
 				e->done = true;
 			else
 				set_debug_message(e,": no write since last change");
@@ -1354,21 +1354,25 @@ void events( Editor * e )
 }
 
 
-void quit(Editor * e)
+void quit( Editor * e )
 {
-	free(e->lines.list_of_lienes);
 	Line_data * prev = NULL;
-	Line_data * temp = e->lines.head ;
-	for(int i =0; i< e->lines.count;i++)
+	Line_data * temp = e->lines.head;
+	for( int i =0; i< e->lines.count; i++ )
 	{
 		prev = temp;
 		temp= temp->next;
-		free(prev->data);
-		free(prev);
+		free( prev->data );
+		free( prev );
 	}
+	free(e->lines.list_of_lienes);
+
+
+	//clear screen!
 	write(STDOUT_FILENO, "\x1b[2J", 4);
 	write(STDOUT_FILENO, "\x1b[H", 3);
-	
+
+
 	for( int i = 0; i < e->undo_stack->count; i++ )
 	{
 		if( e->undo_stack->items[i] != NULL )
