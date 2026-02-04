@@ -31,6 +31,19 @@ void die( const char * s )
 	return;
 }
 
+void enter_alt_screen()
+{
+	write( 0, "\x1b[?1049h", 8 );
+	return;
+}
+
+void leave_alt_screen()
+{
+	write( 0, "\x1b[?1049l", 8 );
+	return;
+}
+
+
 
 void set_debug_message( Editor *e, char * s )
 {
@@ -41,22 +54,25 @@ void set_debug_message( Editor *e, char * s )
 
 void disable_raw_mode( Editor * e )
 {
+	leave_alt_screen();
 	if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
   	die( "tcsetattr" );
 	return;
 }
 
 
-void enable_Raw_mode( Editor *  e ) {
-  if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
-  struct termios raw = e->window.orig_termios;
-  raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
-  raw.c_oflag &= ~( OPOST );
-  raw.c_cflag |= ( CS8 );
-  raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
-  raw.c_cc[VMIN] = 0;
-  raw.c_cc[VTIME] = 1;
-  if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
+void enable_Raw_mode( Editor *  e )
+{
+	enter_alt_screen();
+	if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
+	struct termios raw = e->window.orig_termios;
+	raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
+	raw.c_oflag &= ~( OPOST );
+	raw.c_cflag |= ( CS8 );
+	raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
+	raw.c_cc[VMIN] = 0;
+	raw.c_cc[VTIME] = 1;
+	if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
 	return;
 }
 
@@ -368,6 +384,7 @@ void redo_change( Editor * e )
 		int changes = change->num_lines_changed;
 		e->undo_stack->count++;
 		e->redo_stack->count--;
+		free_change( change );
 		for( int i = 0; i < changes; i++ )
 		{
 			change = e->redo_stack->items[e->redo_stack->count - 1];
@@ -1388,8 +1405,7 @@ void quit( Editor * e )
 	}
 	free( e->redo_stack->items );
 	free( e->redo_stack );
-
-
+	
 	free( e->line_buff->contents );
 	free( e->line_buff );
 	disable_raw_mode(e);
