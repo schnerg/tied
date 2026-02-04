@@ -196,7 +196,6 @@ int read_file( Editor *e, char * file_name )
 	return 0;
 }
 
-
 void init_cursor( Editor * e )
 {
 	e->cursor.rx = 0;
@@ -229,13 +228,9 @@ void free_change( Change * change )
 }
 
 void free_change_if_needed( py_list_t * list )
-{
-	if( list->count > 0 )
-		if( list->items[list->count - 1] != NULL )
-			free_change( list->items[list->count - 1 ] );
-	else if( list->count == 0 )
-		if( list->items[list->count] != NULL )
-			free_change( list->items[list->count] );
+{	
+	if( list->items[list->count] != NULL )
+		free_change( list->items[list->count] );
 	return;
 }
 
@@ -260,7 +255,7 @@ void push_insert_to_undo_stack( Editor * e )
 		change->index = e->line_buff->index;
 	append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
 	change->line_num = e->cursor.y_index;
-	//free_change_if_needed( e->undo_stack );
+	free_change_if_needed( e->undo_stack );
 	append_to_py_list( e->undo_stack, change );
 	e->line_buff->num_lines_changed++;
 	return;
@@ -289,7 +284,7 @@ void push_new_line_to_undo_stack( Editor * e )
 	change->data->index = e->cursor.index;
 	append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
 	change->line_num = e->cursor.y_index;
-	//free_change_if_needed( e->undo_stack );
+	free_change_if_needed( e->undo_stack );
 	append_to_py_list( e->undo_stack, change );
 	e->line_buff->num_lines_changed++;
 	return;
@@ -316,7 +311,7 @@ void push_del_line_to_undo_stack( Editor * e )
 	change->data->index = e->line_buff->index;
 	append_to_buffer( change->data, e->lines.list_of_lienes[e->cursor.y_index]->data, e->lines.list_of_lienes[e->cursor.y_index]->count );
 	change->line_num = e->cursor.y_index;
-	//free_change_if_needed( e->undo_stack );
+	free_change_if_needed( e->undo_stack );
 	append_to_py_list( e->undo_stack, change );
 	e->line_buff->num_lines_changed++;
 	return;
@@ -341,7 +336,7 @@ void push_change_to_undo_stack( Editor * e, bool has_changed, bool line_deleted,
 			change->line_added = true;
 		change->num_lines_changed = e->line_buff->num_lines_changed;
 		change->index = e->line_buff->index;
-		//free_change_if_needed( e->undo_stack );
+		free_change_if_needed( e->undo_stack );
 		append_to_py_list( e->undo_stack, change );
 		e->redo_stack->count = 0;
 		e->line_buff->num_lines_changed = 0;
