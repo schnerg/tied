@@ -2,6 +2,7 @@
 
 
 #define TAB_STOP 4
+
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 
@@ -33,13 +34,13 @@ void die( const char * s )
 
 void enter_alt_screen()
 {
-	write( 0, "\x1b[?1049h", 8 );
+	write( STDOUT_FILENO, "\x1b[?1049h", 8 );
 	return;
 }
 
 void leave_alt_screen()
 {
-	write( 0, "\x1b[?1049l", 8 );
+	write( STDOUT_FILENO, "\x1b[?1049l", 8 );
 	return;
 }
 
@@ -55,10 +56,10 @@ void set_debug_message( Editor *e, char * s )
 void disable_raw_mode( Editor * e )
 {
 	leave_alt_screen();
-	
-
 	#ifdef _WIN32
-		SetConsolMode( e->hstdin, e->window.original_mode );
+		SetConsoleMode( e->window.hstdin, e->window.original_mode );
+		HANDLE out = GetStdHandle( STD_OUTPUT_HANDLE );
+		SetConsoleMode( out, e->window.original_mode );
 	#elif __linux__
 		if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
 			die( "tcsetattr" );
@@ -71,10 +72,17 @@ void enable_Raw_mode( Editor *  e )
 {
 	enter_alt_screen();
 	#ifdef _WIN32
-		e->window.hstdin = GetStdHandle( STD_INPUT_HANDLE );
-		GetConsoleMode( e->window.hstdin, &e->window.original_mode );
-		DWORD raw = e->original_mode & ~( ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT);
-		SetConsolMode( e->hstdin, raw );
+		HANDLE in = GetStdHandle( STD_INPUT_HANDLE );
+		HANDLE out = GetStdHandle( STD_OUTPUT_HANDLE );
+		e->window.hstdin = in;
+		DWORD vertual_terminal, raw; 
+		GetConsoleMode( out, &vertual_terminal );
+		GetConsoleMode( in, &e->window.original_mode );
+		raw = e->window.original_mode & ~( ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS );
+		vertual_terminal |=( ENABLE_VIRTUAL_TERMINAL_PROCESSING |  ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | DISABLE_NEWLINE_AUTO_RETURN) ;
+		//vertual_terminal |=( ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN) ;
+		SetConsoleMode( out, vertual_terminal );
+		SetConsoleMode( in, raw );
 	#elif __linux__
 		if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
 		struct termios raw = e->window.orig_termios;
@@ -95,7 +103,7 @@ bool get_window_size( Editor * e )
 	int rows, cols;
 	#ifdef _WIN32
     CONSOLE_SCREEN_BUFFER_INFO csbi;
-	 	GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &csbi )
+	 	GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &csbi );
 		cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 		rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 	#elif __linux__
@@ -616,7 +624,7 @@ void print_cursor( Editor * e )
 {
 	char buff[40];
 	sprintf(  buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
-	write( 0, buff, strlen( buff ) );
+	write( STDOUT_FILENO, buff, strlen( buff ) );
 	return;
 }
 
@@ -773,7 +781,7 @@ void print_chars_to_screen(Editor * e)
 		else	
 			append_to_buffer(buffer,string_to_print,len);
 			
-		append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
+		append_to_buffer(buffer,"\x1b[K",3); ////clear rowl;
 		
 		// print new line at end of line!
 		if( y < e->window.rows - 2 )
@@ -789,7 +797,7 @@ void print_chars_to_screen(Editor * e)
 			}
 		}
 	}
-	append_to_buffer(buffer, "\e[?25h",6);	
+	append_to_buffer(buffer, "\e[?25h",6); // show cursor	
 	write(STDOUT_FILENO,buffer->contents,buffer->count);
 	free(buffer->contents);
 	free(buffer);
@@ -797,25 +805,22 @@ void print_chars_to_screen(Editor * e)
 }
 
 
-void print_mode(Editor *e)
+void print_mode( Editor *e )
 {
 	char bottom[40];
-	sprintf(bottom, "\x1b[%d;%dH", e->window.rows,0);
-	write(0,bottom,strlen(bottom));
-	//write(STDOUT_FILENO,"\n\r",2);
-	
+	sprintf(bottom, "\x1b[%d;%dH", e->window.rows, 1);
+	write(STDOUT_FILENO,bottom,strlen(bottom));
 	char clear_row[40];
-	sprintf(clear_row,"\x1b[K");
-	write(STDOUT_FILENO,clear_row,strlen(clear_row));
-
+	sprintf( clear_row, "\x1b[K" );
+	write(STDOUT_FILENO,clear_row, strlen(clear_row));
 	char buff[80];
 	if( e->mode == NORMAL )
 		sprintf( buff,"\033[33;44mNORMAL MODE \033[0m%s",e->debug_message);
 	else if( e->mode == INSERT )
 		sprintf(buff,"\033[33;44mINSERT MODE \033[0m%s",e->debug_message);
-	write(STDIN_FILENO,buff,strlen(buff));
+	write(STDOUT_FILENO,buff,strlen(buff));
 	sprintf(buff,"\033[0m");
-	write(STDIN_FILENO,buff,strlen(buff));
+	write(STDOUT_FILENO,buff,strlen(buff));
 	return;
 }
 
@@ -862,29 +867,35 @@ void adjust(Editor * e)
 	return;
 }
 
-
-char getch() 
+			//	printf( "%i %i\n", input_record_buffer[i].Event.KeyEvent.uChar.AsciiChar, input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode )	;
+	//		printf( "%i %i %i\n", input_record_buffer[i].Event.KeyEvent.uChar.AsciiChar, input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode, c )	;
+char getch( Editor * e ) 
 {
-  int nread;
-  char c = -1;
-  nread = read(STDIN_FILENO, &c, 1);
+	char c = -1;
+	int nread;
+	#ifdef _WIN32	
+		DWORD numread;
+		INPUT_RECORD input_record_buffer[2];
+		ReadConsoleInput( e->window.hstdin, input_record_buffer, 2, &numread );
+		for( int i = 0; i < numread; i++ )
+			if( input_record_buffer[i].Event.KeyEvent.bKeyDown )
+			{
+				c = input_record_buffer[i].Event.KeyEvent.uChar.AsciiChar; 
+				if( c == 0 && input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode != 17 )
+					c = input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode; 
+			}
+	#elif __linux__
+		nread = read( STDIN_FILENO, &c, 1);
+	#endif
   return c;
 }
 
 
-/*
-if( e->line_buff->index == -1 )
-			e->line_buff->index = e->cursor.index;
-		e->line_buff->has_changed = true;
-*/
-
 void insert_char_to_buff( Editor * e, char c )
 {
-
 	e->can_redo = false;
 	Buff * temp = e->line_buff;
 	temp->count++;
-
 	if( e->line_buff->index == -1 )
 			e->line_buff->index = e->cursor.index;
 	e->line_buff->has_changed = true;
@@ -1098,7 +1109,7 @@ void search( Editor * e )
 	int i = 0;	
 	char c; 
 	char back = '\b';
-	while( ( c = getch() ) != 13 && i < 40 )	
+	while( ( c = getch( e ) ) != 13 && i < 40 )	
 	{
 		if( c == 27 ) // escape 
 		{
@@ -1251,36 +1262,78 @@ void move_cursor_right( Editor * e )
 	return;
 }
 
+#ifdef _WIN32
+	#define BACKSPACE 8
+void events_move_cursor_insert_windows( Editor * e, int c ) 	
+{
+	switch( c )
+	{
+		case 37: move_cursor_left( e ); break;
+		case 38: move_cursor_up( e ); break;
+		case 39: move_cursor_right( e ); break;
+		case 40: move_cursor_down( e ); break;
+	}
+	return;
+}
+
+#elif __linux__
+	#define BACKSPACE 127
+bool events_move_cursor_insert_linux( Editor * e )
+{
+	bool is_arrow_key = false;
+	char temp;
+	if( ( temp = getch( e ) ) != -1 )
+	{
+		is_arrow_key = true;
+		temp = getch( e );
+		switch( temp )
+		{
+			case 'A': move_cursor_up( e );break;
+			case 'B': move_cursor_down( e );break;
+			case 'C': move_cursor_right( e );break;
+			case 'D': move_cursor_left( e );break;
+		}
+	}
+		return is_arrow_key;
+}
+#endif
+
 
 void events_insert( Editor * e )
 {
-	char c = getch();
+	int c = getch( e );
+	#ifdef _WIN32	
+		if( c <= 40 && c >= 37 )
+		{
+			events_move_cursor_insert_windows( e, c );
+			return;
+		}
+	#endif
 	switch( c )
 	{
-		case 27: // escape
-		{
-			char temp;
-			if( temp = getch() != 0 )
-				temp = getch();
-			switch( temp )
-			{
-				case 'A': move_cursor_up( e );break;
-				case 'B': move_cursor_down( e );break;
-				case 'C': move_cursor_right( e );break;
-				case 'D': move_cursor_left( e );break;
-				default: 
+		case 27: // escape not working for some reason!
+		{		
+			#ifdef _WIN32	
+				e->mode = NORMAL;
+				push_insert_to_undo_stack( e );
+				write_line_buffer_to_line( e, e->line_buff );
+				push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
+				update_cursor( e );
+				update_and_print_ui( e );
+			#elif __linux__
+				if( !events_move_cursor_insert_linux( e ) )
 				{
 					e->mode = NORMAL;
-		 			push_insert_to_undo_stack( e );
+					push_insert_to_undo_stack( e );
 					write_line_buffer_to_line( e, e->line_buff );
 					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
 					update_cursor( e );
 					update_and_print_ui( e );
-				}break;
-			}
+				}
+			#endif
 		}break;
 		case 13: enter_key( e, c );break; //enter key
-		case 127: backspace( e, c ); break;
+		case BACKSPACE: backspace( e, c ); break;
 		default:
 		{
 			if( isprint( c ) || c== '\t' )
@@ -1294,7 +1347,14 @@ void events_insert( Editor * e )
 
 void events_normal( Editor * e )
 {	
-	char c=getch();
+	int c = getch( e );
+	#ifdef _WIN32	
+		if( c <= 40 && c >= 37 )
+		{
+			events_move_cursor_insert_windows( e, c );
+			return;
+		}
+	#endif
 	switch(c)
 	{
 		case '/':
@@ -1314,20 +1374,12 @@ void events_normal( Editor * e )
 			update_cursor( e );
 			update_and_print_ui( e );
 		}break;
-		case 27: // escape
-		{
-			char temp;
-			if( temp = getch() != 0 )
-				temp = getch();
-			switch( temp )
+		#ifdef __linux__
+			case 27: // escape
 			{
-				case 'A': move_cursor_up( e );break;
-				case 'B': move_cursor_down( e );break;
-				case 'C': move_cursor_right( e );break;
-				case 'D': move_cursor_left( e );break;
-				default: e->mode = NORMAL; break;
-			}
-		}break;
+				events_move_cursor_insert_linux( e );	
+			}break;
+		#endif
 		case CTRL_KEY('r'):
 		{
 			redo_change( e );
@@ -1414,7 +1466,6 @@ void quit( Editor * e )
 	//clear screen!
 	write(STDOUT_FILENO, "\x1b[2J", 4);
 	write(STDOUT_FILENO, "\x1b[H", 3);
-
 
 	for( int i = 0; i < e->undo_stack->count; i++ )
 	{

@@ -5,6 +5,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -12,13 +17,6 @@
 	#include <sys/ioctl.h>
 	#include <termios.h>
 #endif
-
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <ctype.h>
-#include <termios.h>
-#include <unistd.h>
 
 #include "py_list.h"
 
@@ -89,8 +87,6 @@ typedef struct
 	#elif __linux__
 		struct termios orig_termios;
 	#endif
-
-
 
 }Window;
 
