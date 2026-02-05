@@ -6,7 +6,8 @@ It only kinda works.
 
 This editor doesn't work with unicode.
 
-this editor works only on linux.
+it has windows support! :D
+this editor works best on linux.
 
 
 
@@ -17,17 +18,19 @@ this editor works only on linux.
     make
     make install
 ```
-make sure to change location of install. 
+make sure to change location of install in Makefile
 
 
 ##Usage
 Normal Mode:
-- o = new line and insert mode
-- i = insert mode
-- / = search: limitied to 40 chars
-- ctrl q : quit
-- ctrl s : save 
-- ctrl x : quit without saving
+- o : new line and insert mode
+- i : insert mode
+- / : search: limitied to 40 chars
+- ctrl + u : undo
+- ctrl + r : redo
+- ctrl + q : quit
+- ctrl + s : save 
+- ctrl + x : quit without saving
 
 Insert Mode:
 - esc = switch to normal mode
