@@ -55,8 +55,14 @@ void set_debug_message( Editor *e, char * s )
 void disable_raw_mode( Editor * e )
 {
 	leave_alt_screen();
-	if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
-  	die( "tcsetattr" );
+	
+
+	#ifdef _WIN32
+		SetConsolMode( e->hstdin, e->window.original_mode );
+	#elif __linux__
+		if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
+			die( "tcsetattr" );
+	#endif
 	return;
 }
 
@@ -64,15 +70,22 @@ void disable_raw_mode( Editor * e )
 void enable_Raw_mode( Editor *  e )
 {
 	enter_alt_screen();
-	if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
-	struct termios raw = e->window.orig_termios;
-	raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
-	raw.c_oflag &= ~( OPOST );
-	raw.c_cflag |= ( CS8 );
-	raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
-	raw.c_cc[VMIN] = 0;
-	raw.c_cc[VTIME] = 1;
-	if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
+	#ifdef _WIN32
+		e->window.hstdin = GetStdHandle( STD_INPUT_HANDLE );
+		GetConsoleMode( e->window.hstdin, &e->window.original_mode );
+		DWORD raw = e->original_mode & ~( ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT);
+		SetConsolMode( e->hstdin, raw );
+	#elif __linux__
+		if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
+		struct termios raw = e->window.orig_termios;
+		raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
+		raw.c_oflag &= ~( OPOST );
+		raw.c_cflag |= ( CS8 );
+		raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
+		raw.c_cc[VMIN] = 0;
+		raw.c_cc[VTIME] = 1;
+		if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
+	#endif
 	return;
 }
 

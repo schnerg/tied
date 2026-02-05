@@ -83,7 +83,15 @@ typedef struct
 typedef struct
 {
 	int rows,cols;
-	struct termios orig_termios;
+	#ifdef _WIN32
+		HANDLE hstdin;
+		DWORD original_mode;
+	#elif __linux__
+		struct termios orig_termios;
+	#endif
+
+
+
 }Window;
 
 
