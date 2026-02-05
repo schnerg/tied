@@ -4,7 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <sys/ioctl.h>
+
+
+#ifdef _WIN32
+	#include <windows.h>
+#elif __linux__
+	#include <sys/ioctl.h>
+	#include <termios.h>
+#endif
+
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>

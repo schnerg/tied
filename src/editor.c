@@ -79,15 +79,25 @@ void enable_Raw_mode( Editor *  e )
 
 bool get_window_size( Editor * e )
 {
-	struct winsize w;
-	ioctl( STDOUT_FILENO, TIOCGWINSZ, &w );
-	if( e->window.rows!= w.ws_row || e->window.cols != w.ws_col )
-	{
-		e->window.rows =  w.ws_row;
-		e->window.cols = w.ws_col;
-		return true;  
-	}
-  return false;  
+	int rows, cols;
+	#ifdef _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+	 	GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &csbi )
+		cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+		rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+	#elif __linux__
+		struct winsize w;
+		ioctl( STDOUT_FILENO, TIOCGWINSZ, &w );
+		rows =  w.ws_row;
+		cols = w.ws_col;
+	#endif
+		if( e->window.rows != rows || e->window.cols != cols )
+		{
+			e->window.rows =  rows;
+			e->window.cols = cols;
+			return true;  
+		}
+	return false;  
 } 
 
 
@@ -1366,7 +1376,10 @@ void events( Editor * e )
 		}break;
 	}
 	if( get_window_size( e ) )
+	{
 		adjust( e );
+		render( e );
+	}
 	return;
 }
 
