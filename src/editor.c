@@ -790,7 +790,7 @@ void print_chars_to_screen(Editor * e)
 		}
 		else
 		{
-			if( y < e->window.rows - 2 )
+			if( y < e->window.rows - 1 )
 			{
 				append_to_buffer(buffer,"\x1b[K",3); //clear rowl;
 				append_to_buffer(buffer,"~\n\r",3);
