@@ -701,7 +701,7 @@ void append_to_buffer( Buff * buff, char * str, int size )
 	return;
 }
 
-
+/*
 int calculate_tabs_space( Editor * e, int tabs, int line_num )
 {
 	int j = 0;
@@ -709,7 +709,7 @@ int calculate_tabs_space( Editor * e, int tabs, int line_num )
 			j += ( TAB_STOP - 1 ) - ( j % TAB_STOP );
 	return j;
 }
-
+*/
 
 //TODO: rename function! >:(
 void print_chars_to_screen( Editor * e )
@@ -747,7 +747,7 @@ void print_chars_to_screen( Editor * e )
 			if( tabs > e->tabs )
 				e->tabs = tabs;
 			buff[i] = '\0';
-			e->tabs_space = calculate_tabs_space( e, tabs, y + e->cursor.y_offset );
+		//	e->tabs_space = calculate_tabs_space( e, tabs, y + e->cursor.y_offset );
 		
 			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
 			
@@ -760,8 +760,10 @@ void print_chars_to_screen( Editor * e )
 			int len = strlen( string_to_print );
 			
 			int line_padding  = e->line_nums - strlen( line_num );
-			
-			if( len >= ( e->window.cols - e->line_nums - e->tabs_space )  ) len = e->window.cols - e->line_nums - e->tabs_space + 2;
+		
+			// i hate this line!
+			if( len >=  e->window.cols - ( e->line_nums + 1)  )
+				len = e->window.cols - ( e->line_nums + 1 );
 
 			for( int i =0; i < line_padding; i++ )
 				append_to_buffer( buffer, " ", 1 );
