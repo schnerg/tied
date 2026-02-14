@@ -25,10 +25,12 @@
 typedef struct
 {
 	char * contents;
+	char * to_display;
 	bool line_deleted;
 	bool line_added;
 	bool has_changed;
 	int index;
+	int  dcount;
 	int  count;
 	int  copacity;
 	int num_lines_changed;
@@ -49,6 +51,8 @@ typedef struct
 typedef struct Line_data
 {
 	char * data;
+	char * to_display;
+	int dcount;
 	int copacity;
 	int count;
 	struct Line_data * next;
