@@ -7,7 +7,7 @@ int main( int argc, char * argv[] )
 		Editor e;	
 		init( &e, argv[1] );
 		render( &e );
-		while( !e.done )
+		while( e.done == false )
 		{
 			events( &e );
 		}

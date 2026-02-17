@@ -72,6 +72,7 @@ typedef struct
 typedef struct
 {
 	int rx;
+	int ry;
 	int last_index;
 	int index;
 	int y_index;
