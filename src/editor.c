@@ -33,93 +33,12 @@ void die( const char * s )
 }
 
 
-void enter_alt_screen()
-{
-	write( STDOUT_FILENO, "\x1b[?1049h", 8 );
-	return;
-}
-
-
-void leave_alt_screen()
-{
-	write( STDOUT_FILENO, "\x1b[?1049l", 8 );
-	return;
-}
-
-
 void set_debug_message( Editor *e, char * s )
 {
 	strcpy( e->debug_message, s );
 	return;
 }
 
-
-void disable_raw_mode( Editor * e )
-{
-	leave_alt_screen();
-	#ifdef _WIN32
-		SetConsoleMode( e->window.hstdin, e->window.original_mode );
-		HANDLE out = GetStdHandle( STD_OUTPUT_HANDLE );
-		SetConsoleMode( out, e->window.original_mode );
-	#elif __linux__
-		if (tcsetattr( STDIN_FILENO, TCSAFLUSH, &e->window.orig_termios) == -1 )
-			die( "tcsetattr" );
-	#endif
-	return;
-}
-
-
-void enable_Raw_mode( Editor *  e )
-{
-	enter_alt_screen();
-	#ifdef _WIN32
-		HANDLE in = GetStdHandle( STD_INPUT_HANDLE );
-		HANDLE out = GetStdHandle( STD_OUTPUT_HANDLE );
-		e->window.hstdin = in;
-		DWORD vertual_terminal, raw; 
-		GetConsoleMode( out, &vertual_terminal );
-		GetConsoleMode( in, &e->window.original_mode );
-		raw = e->window.original_mode & ~( ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS );
-		vertual_terminal |=( ENABLE_VIRTUAL_TERMINAL_PROCESSING |  ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | DISABLE_NEWLINE_AUTO_RETURN) ;
-		SetConsoleMode( out, vertual_terminal );
-		SetConsoleMode( in, raw );
-	#elif __linux__
-		if ( tcgetattr( STDIN_FILENO, &e->window.orig_termios ) == -1 ) die( "tcgetattr" );
-		struct termios raw = e->window.orig_termios;
-		raw.c_iflag &= ~( BRKINT | ICRNL | INPCK | ISTRIP | IXON );
-		raw.c_oflag &= ~( OPOST );
-		raw.c_cflag |= ( CS8 );
-		raw.c_lflag &= ~( ECHO | ICANON | IEXTEN | ISIG );
-		raw.c_cc[VMIN] = 0;
-		raw.c_cc[VTIME] = 1;
-		if ( tcsetattr( STDIN_FILENO, TCSAFLUSH, &raw) == -1 ) die( "tcsetattr" );
-	#endif
-	return;
-}
-
-
-bool get_window_size( Editor * e )
-{
-	int rows, cols;
-	#ifdef _WIN32
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-	 	GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &csbi );
-		cols = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-		rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-	#elif __linux__
-		struct winsize w;
-		ioctl( STDOUT_FILENO, TIOCGWINSZ, &w );
-		rows =  w.ws_row;
-		cols = w.ws_col;
-	#endif
-		if( e->window.rows != rows || e->window.cols != cols )
-		{
-			e->window.rows =  rows;
-			e->window.cols = cols;
-			return true;  
-		}
-	return false;  
-} 
 
 
 void realloc_data( Line_data * temp )
@@ -128,7 +47,6 @@ void realloc_data( Line_data * temp )
 	temp->data = realloc( temp->data, temp->copacity * sizeof( char ) );
 	return;
 }
-
 
 
 void init_line(Editor * e, Line_data * temp)
@@ -618,9 +536,9 @@ void init_undo_redo_stacks( Editor * e )
 
 void init( Editor * e, char * file_name )
 {
-	enable_Raw_mode( e );
+	enable_Raw_mode( &e->window );
 	init_settings( e );
-	get_window_size( e );
+	get_window_size( &e->window );
 	set_debug_message( e, "" );
 	e->done = false;
 	e->tabs = 0;
@@ -698,7 +616,7 @@ void editorRefreshScreen( Editor * e )
 {
   write(STDOUT_FILENO, "\e[?25l", 6); // hide cursor
   write(STDOUT_FILENO, "\x1b[H", 3); // move cursor to top left of screen
-	update_cursor( e );	
+	//update_cursor( e );	
 	return;
 }
 
@@ -1487,7 +1405,7 @@ void events( Editor * e )
 			events_insert( e );
 		}break;
 	}
-	if( get_window_size( e ) )
+	if( get_window_size( &e->window ) )
 	{
 		adjust( e );
 		render( e );
@@ -1532,6 +1450,6 @@ void quit( Editor * e )
 	
 	free( e->line_buff->contents );
 	free( e->line_buff );
-	disable_raw_mode( e );
+	disable_raw_mode( &e->window );
 	return;
 }

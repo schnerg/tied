@@ -11,15 +11,8 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#ifdef _WIN32
-	#include <windows.h>
-#elif __linux__
-	#include <sys/ioctl.h>
-	#include <termios.h>
-#endif
-
 #include "py_list.h"
-
+#include "screen.h"
 
 
 typedef struct
@@ -81,19 +74,6 @@ typedef struct
 	int x_offset;
 	int y_offset;
 }Cursor;
-
-
-typedef struct
-{
-	int rows,cols;
-	#ifdef _WIN32
-		HANDLE hstdin;
-		DWORD original_mode;
-	#elif __linux__
-		struct termios orig_termios;
-	#endif
-
-}Window;
 
 
 typedef struct
