@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -14,6 +13,7 @@
 #include "py_list.h"
 #include "screen.h"
 #include "buffer.h"
+#include "cursor.h"
 
 
 typedef struct
@@ -46,20 +46,6 @@ typedef struct
 	int count;
 	int copacity;
 }Lines_data;
-
-
-typedef struct
-{
-	int rx;
-	int ry;
-	int last_index;
-	int index;
-	int y_index;
-	int last_x_offset;
-	int last_y_offset;
-	int x_offset;
-	int y_offset;
-}Cursor;
 
 
 typedef struct

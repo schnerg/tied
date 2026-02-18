@@ -1,22 +1,17 @@
 #include "include/editor.h"
 
 
-#define TAB_STOP 4
-
 #define CTRL_KEY(k) ((k) & 0x1f)
 
 
+void update( Editor * e  );
 void update_and_print_ui( Editor * e );
-
 void add_new_line( Editor * e, char * data, int size_of_data );
-
 void list_of_lienes(Editor * e);
-
 void update_line_buffer( Editor * e );
 void move_cursor_down( Editor * e );
 void remove_line( Editor * e );
 void remove_line_2( Editor * e );
-void adjust( Editor * e );
 
 
 void set_debug_message( Editor *e, char * s )
@@ -528,23 +523,11 @@ void init( Editor * e, char * file_name )
 	init_cursor( e );
 	init_line_buffer( e );
 	init_undo_redo_stacks( e );
+	update( e );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	return;	
 }
 
-
-void index_to_rx( Editor * e )
-{
-	e->cursor.rx = 0;
-	for( int i = 0; i < e->cursor.index; i++ )
-	{ 
-		if( e->line_buff->contents[i] == '\t' )
-			e->cursor.rx += ( TAB_STOP -1 ) - ( e->cursor.rx % TAB_STOP );
-		e->cursor.rx++;
-	}
-	e->cursor.rx -= e->cursor.x_offset;
-	e->cursor.rx += e->line_nums +1;	
-	return;
-}
 
 
 void update( Editor * e )
@@ -556,40 +539,9 @@ void update( Editor * e )
 }
 
 
-void update_cursor( Editor * e )
-{
-	update( e );
-	e->cursor.index = e->cursor.last_index;
-	if( e->cursor.index > e->line_buff->count )
-	{
-		while( e->cursor.index > e->line_buff->count )
-		{
-			e->cursor.index--;
-		}
-	}
-	index_to_rx( e );
-	e->cursor.x_offset = e->cursor.last_x_offset;
-	e->cursor.y_offset = e->cursor.last_y_offset;
-	adjust( e );	
-
-	return;
-}
 
 
 
-void print_cursor( Editor * e )
-{
-	char bar[] = "\e[5 q"	;
-	char block[] = "\e[1 q"	;
-	if( e->mode == NORMAL )
-		write( STDOUT_FILENO, block, strlen( block ) );
-	if( e->mode == INSERT )
-		write( STDOUT_FILENO, bar, strlen( bar ) );
-	char buff[40];
-	sprintf( buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
-	write( STDOUT_FILENO, buff, strlen( buff ) );
-	return;
-}
 
 
 void editorRefreshScreen( Editor * e ) 
@@ -692,47 +644,18 @@ void print_mode( Editor *e )
 void update_and_print_ui( Editor * e )
 {
 	print_mode( e );
-	print_cursor( e );
+	print_cursor( &e->cursor, e->mode );
 }
 
 
 void render( Editor * e )
 {
-	update_cursor( e );
+	update( e );
+	update_cursor( &e->cursor, e->line_buff );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
 	print_chars_to_screen( e );
 	update_and_print_ui( e );
-	return;
-}
-
-
-//so adjust_yx_offsets
-void adjust(Editor * e)
-{
-	// when window resizes, adjust x_offset so that cursor is still on screen in proper pos;
-	// this is hard to read
-	
-	if( e->cursor.rx > e->window.cols || e->cursor.rx < e->cursor.x_offset )
-	{
-		e->cursor.x_offset = 0;
-		index_to_rx( e );
-		while( e->cursor.rx > e->window.cols )
-		{
-			e->cursor.x_offset += e->window.cols / 2 ;
-			index_to_rx( e );
-		}
-	}
-	e->cursor.last_x_offset = e->cursor.x_offset;
-
-
-	// this is correct! 
-	//adjust y_offset so cursor is still on screen when resized;
-	if(e->cursor.y_index - e->cursor.y_offset > e->window.rows || e->cursor.y_index < e->cursor.y_offset )
-	{	
-		e->cursor.y_offset = 0;
-		while( e->cursor.y_index - e->cursor.y_offset > e->window.rows )
-			e->cursor.y_offset += e->window.rows -1 ;
-	}
-	e->cursor.last_y_offset = e->cursor.y_offset;
 	return;
 }
 
@@ -782,7 +705,7 @@ void insert_char_to_buff( Editor * e, char c )
 
 
 	e->cursor.index++;
-	index_to_rx( e );
+		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	if( e->cursor.rx >= e->window.cols  - 1 )
 		e->cursor.x_offset += e->window.cols / 2 ;
 	
@@ -843,16 +766,13 @@ void backspace( Editor * e, char c )
 		if( e->line_buff->index == -1 )
 			e->line_buff->index = e->cursor.index;
 		e->line_buff->has_changed = true;
-		
 		e->cursor.index--;	
 		e->cursor.last_index = e->cursor.index;
 		Buff * temp = e->line_buff;
 		temp->count--;	
 		for( int i = e->cursor.index; i < temp->count; i++ )
 			temp->contents[i] = temp->contents[i+1];
-	
-		// adjust_yx_offsets
-		index_to_rx( e );
+		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 		if( e->cursor.rx <= ( e->line_nums + 1 ) && e->cursor.x_offset > 0 )
 			e->cursor.x_offset -= e->window.cols - ( e->line_nums + 1 ); 
 		if( e->cursor.x_offset < 0 )
@@ -870,14 +790,12 @@ void backspace( Editor * e, char c )
 		remove_line( e );
 		list_of_lienes( e );	
 		e->cursor.y_index--;	
-		
 		if( e->cursor.index - e->cursor.x_offset >= e->window.cols - 1)
 		{
 			int shift = ( e->window.cols - ( e->cursor.index - e->cursor.x_offset) ) + 1;
 			e->cursor.x_offset += shift;
 		}
 	}
-	
 	update_line_buffer_td( e->line_buff );
 	render( e );
 	return;
@@ -1028,7 +946,7 @@ void search( Editor * e )
 			set_debug_message( e, message );
 		}
 	}
-	adjust( e );
+	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
 	render( e ); 
 	return;
 }
@@ -1092,7 +1010,7 @@ void move_cursor_left( Editor * e )
 		}
 		e->cursor.index--;
 		
-		index_to_rx( e );
+		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 
 		if( e->cursor.rx <= ( e->line_nums + 1 ) && e->cursor.x_offset > 0 )
 			e->cursor.x_offset -= e->window.cols - ( e->line_nums + 1 ); 
@@ -1120,7 +1038,7 @@ void move_cursor_right( Editor * e )
 		}		
 		
 		e->cursor.index++;
-		index_to_rx( e );
+		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 		int shift = ( e->window.cols - ( e->cursor.index - e->cursor.x_offset) ) + 1;
 		if( e->cursor.rx >= e->window.cols  - 1 )
 			e->cursor.x_offset += shift;
@@ -1188,7 +1106,7 @@ void events_insert( Editor * e )
 				push_insert_to_undo_stack( e );
 				write_line_buffer_to_line( e, e->line_buff );
 				push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
-				update_cursor( e );
+				update_cursor( &e->cursor, e->line_buff );
 				update_and_print_ui( e );
 			#elif __linux__
 				if( !events_move_cursor_insert_linux( e ) )
@@ -1197,7 +1115,7 @@ void events_insert( Editor * e )
 					push_insert_to_undo_stack( e );
 					write_line_buffer_to_line( e, e->line_buff );
 					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
-					update_cursor( e );
+					update_cursor( &e->cursor, e->line_buff );
 					update_and_print_ui( e );
 				}
 			#endif
@@ -1252,12 +1170,12 @@ void events_normal( Editor * e )
 			e->cursor.index = 0;//	e->lines.list_of_lienes[e->cursor.y_index]->count;
 			enter_key( e, c );
 			e->mode = INSERT;
-			update_cursor( e );
+			update_cursor( &e->cursor, e->line_buff );
 		}break;
 		case 'i':
 		{
 			e->mode = INSERT;
-			update_cursor( e );
+			update_cursor( &e->cursor, e->line_buff );
 			update_and_print_ui( e );
 		}break;
 		#ifdef __linux__
@@ -1344,7 +1262,7 @@ void events( Editor * e )
 	}
 	if( get_window_size( &e->window ) )
 	{
-		adjust( e );
+		adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
 		render( e );
 	}
 	return;
