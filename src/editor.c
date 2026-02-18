@@ -7,10 +7,11 @@
 
 
 void update_and_print_ui( Editor * e );
-Buff * init_buffer( void );
-void append_to_buffer( Buff * buff, char * str, int size );
+
 void add_new_line( Editor * e, char * data, int size_of_data );
+
 void list_of_lienes(Editor * e);
+
 void update_line_buffer( Editor * e );
 void move_cursor_down( Editor * e );
 void remove_line( Editor * e );
@@ -18,27 +19,11 @@ void remove_line_2( Editor * e );
 void adjust( Editor * e );
 
 
-void reset_buffer( Buff * buff )
-{
-	buff->count = 0;
-	return;
-}
-
-
-void die( const char * s )
-{
-	perror(s);
-	exit(1);
-	return;
-}
-
-
 void set_debug_message( Editor *e, char * s )
 {
 	strcpy( e->debug_message, s );
 	return;
 }
-
 
 
 void realloc_data( Line_data * temp )
@@ -85,8 +70,7 @@ void resize_list( Editor * e )
 void save_file( Editor * e )
 {
 	FILE * fp = fopen( e->file_name, "w" );
-	if( fp == NULL ) die( "file read failed?" );
-	Line_data * temp = e->lines.head;;
+ 	Line_data * temp = e->lines.head;;
 	for( int row = 0; row < e->lines.count; row++ )
 	{
 		for( int col =0; col < temp->count; col++ )
@@ -108,11 +92,7 @@ void save_file( Editor * e )
 void save_file_name( Editor * e, char * file_name )
 {
 	if( strlen( file_name ) < 255 )
-	{
 		strcpy( e->file_name, file_name );	
-	}
-	else 
-		die( "length of filename is too long" );
 	return;
 }
 
@@ -551,6 +531,7 @@ void init( Editor * e, char * file_name )
 	return;	
 }
 
+
 void index_to_rx( Editor * e )
 {
 	e->cursor.rx = 0;
@@ -575,10 +556,8 @@ void update( Editor * e )
 }
 
 
-
 void update_cursor( Editor * e )
 {
-	
 	update( e );
 	e->cursor.index = e->cursor.last_index;
 	if( e->cursor.index > e->line_buff->count )
@@ -592,12 +571,7 @@ void update_cursor( Editor * e )
 	e->cursor.x_offset = e->cursor.last_x_offset;
 	e->cursor.y_offset = e->cursor.last_y_offset;
 	adjust( e );	
-	char bar[] = "\e[5 q"	;
-	char block[] = "\e[1 q"	;
-	if( e->mode == NORMAL )
-		write( STDOUT_FILENO, block, strlen( block ) );
-	if( e->mode == INSERT )
-		write( STDOUT_FILENO, bar, strlen( bar ) );
+
 	return;
 }
 
@@ -605,6 +579,12 @@ void update_cursor( Editor * e )
 
 void print_cursor( Editor * e )
 {
+	char bar[] = "\e[5 q"	;
+	char block[] = "\e[1 q"	;
+	if( e->mode == NORMAL )
+		write( STDOUT_FILENO, block, strlen( block ) );
+	if( e->mode == INSERT )
+		write( STDOUT_FILENO, bar, strlen( bar ) );
 	char buff[40];
 	sprintf( buff, "\x1b[%d;%dH", e->cursor.y_index - e->cursor.y_offset + 1, e->cursor.rx + 1 );
 	write( STDOUT_FILENO, buff, strlen( buff ) );
@@ -616,51 +596,8 @@ void editorRefreshScreen( Editor * e )
 {
   write(STDOUT_FILENO, "\e[?25l", 6); // hide cursor
   write(STDOUT_FILENO, "\x1b[H", 3); // move cursor to top left of screen
-	//update_cursor( e );	
 	return;
 }
-
-
-Buff * init_buffer( void )
-{
-	Buff * buff = calloc( 1, sizeof( Buff ) );
-	buff->count = 0;
-	buff->dcount = 0;
-	buff->copacity = 50;
-	buff->contents = calloc( buff->copacity, sizeof( char ) );
-	buff->to_display = NULL;
-	buff->num_lines_changed = 0;
-	buff->line_deleted = false;
-	buff->line_added = false;
-	buff->has_changed = false;
-	buff->index = -1;
-	return buff;	
-}
-
-
-void resize_buffer( Buff * buff )
-{
-	buff->copacity *= 2;
-	buff->contents = realloc( buff->contents, buff->copacity * sizeof( char ) );
-	return;
-}
-
-
-void append_to_buffer( Buff * buff, char * str, int size )
-{
-	while( buff->count + size >= buff->copacity - 1 )
-			resize_buffer( buff );
-	int j = buff->count;
-	for( int i = 0; i < size; i++ )
-	{
-		buff->contents[j] = str[i];
-		j++;
-	}
-	buff->contents[j] = '\0';
-	buff->count += size;
-	return;
-}
-
 
 
 //TODO: rename function! >:(
@@ -749,6 +686,7 @@ void print_mode( Editor *e )
 	write( STDOUT_FILENO, buff, strlen( buff ) );
 	return;
 }
+
 
 
 void update_and_print_ui( Editor * e )
@@ -958,7 +896,6 @@ void list_of_lienes( Editor * e )
 	return;	
 }
 
-// rewrite for buffer!
 void add_new_line( Editor * e, char * data, int size_of_data )
 {
 	Line_data * current_line  = e->lines.list_of_lienes[e->cursor.y_index];

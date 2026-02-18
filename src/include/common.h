@@ -13,21 +13,7 @@
 
 #include "py_list.h"
 #include "screen.h"
-
-
-typedef struct
-{
-	char * contents;
-	char * to_display;
-	bool line_deleted;
-	bool line_added;
-	bool has_changed;
-	int index;
-	int  dcount;
-	int  count;
-	int  copacity;
-	int num_lines_changed;
-}Buff;
+#include "buffer.h"
 
 
 typedef struct
@@ -92,7 +78,6 @@ typedef struct
 		NORMAL,
 		INSERT
 	}mode;
-	
 
 	Cursor cursor;
 //line stuff

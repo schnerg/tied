@@ -7,11 +7,13 @@ void enter_alt_screen()
 	return;
 }
 
+
 void leave_alt_screen()
 {
 	write( STDOUT_FILENO, "\x1b[?1049l", 8 );
 	return;
 }
+
 
 void disable_raw_mode( Window * window )
 {
@@ -55,6 +57,7 @@ void enable_Raw_mode( Window * window )
 	return;
 }
 
+
 bool get_window_size( Window * window )
 {
 	int rows, cols;
@@ -77,8 +80,4 @@ bool get_window_size( Window * window )
 		}
 	return false;  
 } 
-
-
-
-
 
