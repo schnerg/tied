@@ -14,6 +14,8 @@
 #include "screen.h"
 #include "buffer.h"
 #include "cursor.h"
+#include "data.h"
+#include "fileio.h"
 
 
 typedef struct
@@ -26,26 +28,6 @@ typedef struct
 	Buff * data;
 }Change;
 
-
-typedef struct Line_data
-{
-	char * data;
-	char * to_display;
-	int dcount;
-	int copacity;
-	int count;
-	struct Line_data * next;
-	struct Line_data * prev;
-}Line_data;
-
-
-typedef struct
-{
-	Line_data * head;
-	Line_data ** list_of_lienes;
-	int count;
-	int copacity;
-}Lines_data;
 
 
 typedef struct

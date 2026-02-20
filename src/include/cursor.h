@@ -5,7 +5,6 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "buffer.h"
 #include "screen.h"

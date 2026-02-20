@@ -43,3 +43,16 @@ void append_to_buffer( Buff * buff, char * str, int size )
 	buff->count += size;
 	return;
 }
+
+
+void write_line_buffer_to_line( Line_data * line, Buff * buff )
+{
+	while( buff->count >= line->copacity )
+		realloc_data( line );
+	memcpy( line->data, buff->contents, buff->count );
+	line->count = buff->count;
+	update_line( line );
+	return;
+}
+
+
