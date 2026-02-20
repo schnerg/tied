@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <ctype.h>
 #include <unistd.h>
 
 #include "py_list.h"
@@ -16,6 +15,8 @@
 #include "cursor.h"
 #include "data.h"
 #include "fileio.h"
+#include "search.h"
+#include "io.h"
 
 
 typedef struct
@@ -63,5 +64,6 @@ typedef struct
 	bool done;
 	Window window;
 }Editor;
+
 
 #endif

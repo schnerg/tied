@@ -320,27 +320,8 @@ void render( Editor * e )
 	return;
 }
 
-//I hate windows! >:(
-char getch( Editor * e ) 
-{
-	char c = -1;
-	int nread;
-	#ifdef _WIN32	
-		DWORD numread;
-		INPUT_RECORD input_record_buffer[2];
-		ReadConsoleInput( e->window.hstdin, input_record_buffer, 2, &numread );
-		for( int i = 0; i < numread; i++ )
-			if( input_record_buffer[i].Event.KeyEvent.bKeyDown )
-			{
-				c = input_record_buffer[i].Event.KeyEvent.uChar.AsciiChar; 
-				if( c == 0 && input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode != 17 )
-					c = input_record_buffer[i].Event.KeyEvent.wVirtualKeyCode; 
-			}
-	#elif __linux__
-		nread = read( STDIN_FILENO, &c, 1);
-	#endif
-  return c;
-}
+
+
 
 
 
@@ -550,86 +531,7 @@ void enter_key( Editor * e, char c )
 }
 
 
-//TODO: refactor to deal with commands
-void search( Editor * e )
-{
-	strcpy( e->debug_message, "" );
-	print_mode( &e->window, e->mode, e->debug_message );
-	print_cursor( &e->cursor, e->mode );
-	// move curor down to menu bar
-	char buff[40];
-	sprintf( buff, "\x1b[%d;%dH", e->window.rows, 13 );
-	write( 0, buff, strlen( buff ) );
-	// getstring()
-	int i = 0;	
-	char c; 
-	char back = '\b';
-	while( ( c = getch( e ) ) != 13 && i < 40 )	
-	{
-		if( c == 27 ) // escape 
-		{
-			strcpy( e->debug_message, "" );
-			render( e );
-			return;
-		}
-		if ( c == 127 )// backspace
-		{
-			if(i > 0)
-			{
-				i--;
-				write(STDOUT_FILENO, &back, 1);
-				write(STDOUT_FILENO, " ", 1);
-				write(STDOUT_FILENO, &back, 1);
-			}
-		}
-		else if( isprint( c ) )
-		{
-			write(STDOUT_FILENO, &c, 1);
-			buff[i] = c;
-			i++;
-		}
-	}
-	buff[i] = '\0';
-	// search
-	char * index = NULL;
-	for( int i = e->cursor.y_index; i < e->lines.count; i++ )
-	{
-		index = strstr( e->lines.list_of_lines[i]->data, buff );
-		if( index != NULL )
-		{
-			e->cursor.y_index = i; 
-			e->cursor.index = index - e->lines.list_of_lines[i]->data;
-			e->cursor.last_index = e->cursor.index;
-			e->cursor.last_x_offset = e->cursor.x_offset;
-			break;	
-		}
-	}
-	if( index == NULL )
-	{
-		strcpy( e->debug_message, "reached bottom: searching from top" );
-		for( int i = 0; i < e->cursor.y_index; i++ )
-		{
-			index = strstr( e->lines.list_of_lines[i]->data, buff );
-			if( index != NULL )
-			{
-				e->cursor.y_index = i; 
-				e->cursor.index = index - e->lines.list_of_lines[i]->data;
-				e->cursor.last_index = e->cursor.index;
-				e->cursor.last_x_offset = e->cursor.x_offset;
-				break;	
-			}
-		}
-		if( index == NULL )
-		{
-			char message[40];
-			snprintf( message, 40, "Pattern not found: %s", buff );
-			strcpy( e->debug_message, message );
-		}
-	}
-	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
-	render( e ); 
-	return;
-}
+
 
 
 
@@ -752,10 +654,10 @@ bool events_move_cursor_insert_linux( Editor * e )
 {
 	bool is_arrow_key = false;
 	char temp;
-	if( ( temp = getch( e ) ) != -1 )
+	if( ( temp = getch( &e->window ) ) != -1 )
 	{
 		is_arrow_key = true;
-		temp = getch( e );
+		temp = getch( &e->window );
 		switch( temp )
 		{
 			case 'A': move_cursor_up( e );break;
@@ -771,7 +673,7 @@ bool events_move_cursor_insert_linux( Editor * e )
 
 void events_insert( Editor * e )
 {
-	int c = getch( e );
+	int c = getch( &e->window );
 	#ifdef _WIN32	
 		if( c <= 40 && c >= 37 )
 		{
@@ -824,7 +726,7 @@ char comand_mode( Editor * e )
 	char c;
 	while( true )
 	{
-		c = getch( e );
+		c = getch( &e->window );
 		if( c != -1 )
 			goto done;
 	}
@@ -835,7 +737,7 @@ char comand_mode( Editor * e )
 
 void events_normal( Editor * e )
 {	
-	int c = getch( e );
+	int c = getch( &e->window );
 	#ifdef _WIN32	
 		if( c <= 40 && c >= 37 )
 		{
@@ -847,7 +749,10 @@ void events_normal( Editor * e )
 	{
 		case '/':
 		{
-			search( e );
+ 			search( &e->window, &e->cursor, e->mode, e->debug_message, &e->lines );
+			adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
+			update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
+			render( e );
 		}break;
 		case 'o':
 		{
