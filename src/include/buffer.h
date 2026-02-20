@@ -6,6 +6,7 @@
 #include <string.h>
 #include "data.h"
 
+
 typedef struct
 {
 	char * contents;
@@ -26,5 +27,9 @@ void append_to_buffer( Buff  * buff, char * str, int size );
 void reset_buffer( Buff * buff );
 Buff * init_buffer();
 void write_line_buffer_to_line( Line_data * line, Buff * buff );
+Buff * init_line_buffer();
+void update_line_buffer( Buff * line_buff, Line_data * line );
+void update_line_buffer_td( Buff * line_buff );
+
 
 #endif

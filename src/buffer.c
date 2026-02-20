@@ -55,4 +55,53 @@ void write_line_buffer_to_line( Line_data * line, Buff * buff )
 	return;
 }
 
+void update_line_buffer_td( Buff * line_buff )
+{
+	int i, j;
+	int tabs = 0;
+	
+	if( line_buff->to_display != NULL )
+		free( line_buff->to_display );
+	
+	for( i = 0; i < line_buff->count; i++ )
+		if( line_buff->contents[i] == '\t' )
+			tabs++;
+	
+	line_buff->to_display = malloc( ( line_buff->count + ( tabs * TAB_STOP -1 ) + 1) * sizeof( char ) );
+	
+	j=0;
+	for( i = 0; i < line_buff->count; i++ )
+	{
+		if( line_buff->contents[i] == '\t' )
+		{
+			line_buff->to_display[j++] = ' ';
+			while( j % TAB_STOP != 0 )
+				line_buff->to_display[j++] = ' ';
+		}
+		else
+			line_buff->to_display[j++] = line_buff->contents[i];
+	}
+	line_buff->to_display[j] = '\0';
+	line_buff->dcount = j;
+	
+
+	return;
+}
+
+
+void update_line_buffer( Buff * line_buff, Line_data * line )
+{
+	reset_buffer( line_buff );	
+	append_to_buffer( line_buff, line->data, line->count );
+	update_line_buffer_td( line_buff );
+	return;
+}
+
+
+Buff * init_line_buffer()
+{
+	Buff * line_buff = init_buffer();
+	return line_buff;
+}
+
 

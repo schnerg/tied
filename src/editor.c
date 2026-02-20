@@ -7,11 +7,10 @@
 void update( Editor * e  );
 void update_and_print_ui( Editor * e );
 void add_new_line( Editor * e, char * data, int size_of_data );
-void update_line_buffer( Editor * e );
 void move_cursor_down( Editor * e );
 void remove_line( Editor * e );
 void remove_line_2( Editor * e );
-
+void update_line_buffer( Buff * line_buff, Line_data * line );;
 
 
 void init_cursor( Editor * e )
@@ -218,7 +217,7 @@ void redo_change( Editor * e )
 		if( e->redo_stack->count == 0 )
 			e->can_redo = false;
 		e->can_undo = true;
-		update_line_buffer( e );
+		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 		render( e );
 	}
 	return;
@@ -269,7 +268,7 @@ void undo_change( Editor * e )
 			e->undo_stack->count--;
 		}	
 		push_change_to_redo_stack( e, changes );
-		update_line_buffer( e );
+		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 		render( e );
 		if( e->undo_stack->count == 0 )
 			e->can_undo = false;
@@ -279,55 +278,6 @@ void undo_change( Editor * e )
 }
 
 
-void update_line_buffer_td( Buff * line_buff )
-{
-	int i, j;
-	int tabs = 0;
-	
-	if( line_buff->to_display != NULL )
-		free( line_buff->to_display );
-	
-	for( i = 0; i < line_buff->count; i++ )
-		if( line_buff->contents[i] == '\t' )
-			tabs++;
-	
-	line_buff->to_display = malloc( ( line_buff->count + ( tabs * TAB_STOP -1 ) + 1) * sizeof( char ) );
-	
-	j=0;
-	for( i = 0; i < line_buff->count; i++ )
-	{
-		if( line_buff->contents[i] == '\t' )
-		{
-			line_buff->to_display[j++] = ' ';
-			while( j % TAB_STOP != 0 )
-				line_buff->to_display[j++] = ' ';
-		}
-		else
-			line_buff->to_display[j++] = line_buff->contents[i];
-	}
-	line_buff->to_display[j] = '\0';
-	line_buff->dcount = j;
-	
-
-	return;
-}
-
-
-void update_line_buffer( Editor * e )
-{
-	reset_buffer( e->line_buff );	
-	append_to_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index]->data, e->lines.list_of_lines[e->cursor.y_index]->count );
-	update_line_buffer_td( e->line_buff );
-	return;
-}
-
-
-void init_line_buffer( Editor * e )
-{
-	e->line_buff = init_buffer();
-	update_line_buffer( e );	
-	return;
-}
 
 
 void init_undo_redo_stacks( Editor * e )
@@ -352,7 +302,8 @@ void init( Editor * e )
 	if( read_file( &e->lines, e->file_name ) )
 		strcpy( e->debug_message, ": new buffer created" );
 	init_cursor( e );
-	init_line_buffer( e );
+	e->line_buff = init_line_buffer();
+	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
 	init_undo_redo_stacks( e );
 	update( e );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
@@ -790,7 +741,7 @@ void move_cursor_up( Editor * e )
 			e->cursor.y_offset--;
 		e->cursor.last_y_offset = e->cursor.y_offset;
 
-		update_line_buffer( e );
+		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 		render( e );
 	}
 	return;
@@ -813,7 +764,7 @@ void move_cursor_down( Editor * e )
 			e->cursor.y_offset++;
 		e->cursor.last_y_offset = e->cursor.y_offset;
 		
-		update_line_buffer( e );
+		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 		render( e );
 	}
 	return;
@@ -1022,7 +973,7 @@ void events_normal( Editor * e )
 					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
 					remove_line_2( e );
 					update_list_of_lines( &e->lines );
-					update_line_buffer( e );
+					update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 					render( e );
 				}break;
 			}
