@@ -3,11 +3,10 @@
 
 #define TAB_STOP 4
 
-#include <string.h>
-#include <stdio.h>
-
 #include "buffer.h"
-#include "screen.h"
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
 
 typedef struct
 {
@@ -21,7 +20,7 @@ typedef struct
 	int y_offset;
 }Cursor;
 
-void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff  );
+void init_cursor( Cursor * c );
 void print_cursor( Cursor * c, int mode );
 void update_cursor( Cursor * c, Buff * line_buff );
 void index_to_rx( Cursor * c, Buff * cbuff, int line_nums );

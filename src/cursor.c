@@ -1,6 +1,21 @@
 #include "include/cursor.h"
 
 
+void init_cursor( Cursor * c )
+{
+	c->rx = 0;
+	c->y_index = 0;
+	c->last_index = 0;
+	c->index = 0;
+	c->last_x_offset = 0;	
+	c->last_y_offset = 0;	
+	c->x_offset = 0;
+	c->y_offset = 0;
+	return;
+}
+
+
+
 void index_to_rx( Cursor * c, Buff * cbuff, int line_nums )
 {
 	c->rx = 0;
@@ -31,6 +46,7 @@ void update_cursor( Cursor * c, Buff * line_buff )
 	return;
 }
 
+
 void print_cursor( Cursor * c, int mode )
 {
 	char bar[] = "\e[5 q"	;
@@ -44,29 +60,4 @@ void print_cursor( Cursor * c, int mode )
 	write( STDOUT_FILENO, buff, strlen( buff ) );
 	return;
 }
-
-void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff  )
-{
-	if( c->rx > window->cols || c->rx < c->x_offset )
-	{
-		c->x_offset = 0;
-		
- 		index_to_rx( c, cbuff, line_nums );
-		while( c->rx > window->cols )
-		{
-			c->x_offset += window->cols / 2 ;
- 			index_to_rx( c, cbuff, line_nums );
-		}
-	}
-	c->last_x_offset = c->x_offset;
-	if( c->y_index - c->y_offset > window->rows || c->y_index < c->y_offset )
-	{	
-		c->y_offset = 0;
-		while( c->y_index - c->y_offset > window->rows )
-			c->y_offset += window->rows / 2 ;
-	}
-	c->last_y_offset = c->y_offset;
-	return;
-}
-
 

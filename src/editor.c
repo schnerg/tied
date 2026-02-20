@@ -5,7 +5,6 @@
 
 
 void update( Editor * e  );
-void update_and_print_ui( Editor * e );
 void add_new_line( Editor * e, char * data, int size_of_data );
 void move_cursor_down( Editor * e );
 void remove_line( Editor * e );
@@ -13,26 +12,14 @@ void remove_line_2( Editor * e );
 void update_line_buffer( Buff * line_buff, Line_data * line );;
 
 
-void init_cursor( Editor * e )
-{
-	e->cursor.rx = 0;
-	e->cursor.y_index = 0;
-	e->cursor.last_index = 0;
-	e->cursor.index = 0;
-	e->cursor.last_x_offset = 0;	
-	e->cursor.last_y_offset = 0;	
-	e->cursor.x_offset = 0;
-	e->cursor.y_offset = 0;
-	return;
-}
 
-
-void init_settings( Editor * e )
+void init_editor_settings( Editor * e )
 {
 	e->saved = true;
 	e->mode = NORMAL;
 	return;
 }
+
 
 void free_change( Change * change )
 {
@@ -245,6 +232,9 @@ void undo_change( Editor * e )
 			else if( change->line_deleted )
 			{	
 				e->cursor.y_index = change->line_num - 1;
+				if( e->cursor.y_index < 0 )
+				e->cursor.y_index = 0;
+
 				add_new_line( e, change->data->contents, change->data->count );
 				e->lines.count++;
 				update_list_of_lines( &e->lines );
@@ -278,8 +268,6 @@ void undo_change( Editor * e )
 }
 
 
-
-
 void init_undo_redo_stacks( Editor * e )
 {
 	e->can_undo = false;
@@ -293,15 +281,14 @@ void init_undo_redo_stacks( Editor * e )
 void init( Editor * e )
 {
 	enable_Raw_mode( &e->window );
-	init_settings( e );
+	init_editor_settings( e );
 	get_window_size( &e->window );
 	strcpy( e->debug_message, "" );
 	e->done = false;
 	e->tabs = 0;
-	e->tabs_space = 0;
 	if( read_file( &e->lines, e->file_name ) )
 		strcpy( e->debug_message, ": new buffer created" );
-	init_cursor( e );
+	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
 	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
 	init_undo_redo_stacks( e );
@@ -321,126 +308,17 @@ void update( Editor * e )
 }
 
 
-
-
-
-
-
-void editorRefreshScreen( Editor * e ) 
-{
-  write(STDOUT_FILENO, "\e[?25l", 6); // hide cursor
-  write(STDOUT_FILENO, "\x1b[H", 3); // move cursor to top left of screen
-	return;
-}
-
-
-//TODO: rename function! >:(
-void print_chars_to_screen( Editor * e )
-{
-	editorRefreshScreen( e );
-	Buff * buffer = init_buffer();
-	Line_data * temp = e->lines.list_of_lines[e->cursor.y_offset];
-	char buff[e->window.cols + 1];
-	int i = 0;
-	int tabs = 0;
-	for( int y = 0; y < e->window.rows - 1; y++ )
-	{
-		if( y < e->lines.count - e->cursor.y_offset )
-		{	
-			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
-			//append line num;
-			char line_num[40];
-			snprintf( line_num, 40, "%i", y + e->cursor.y_offset );
-			int line_padding  = e->line_nums - strlen( line_num );
-			for( int i =0; i < line_padding; i++ )
-				append_to_buffer( buffer, " ", 1 );
-			append_to_buffer( buffer, "\033[0;33m", 7 );
-			append_to_buffer( buffer, line_num, strlen(line_num) );
-			append_to_buffer( buffer, "\033[0m", 4 );
-			append_to_buffer( buffer, " ", 1 );
-
-
-			//buffer stuff!	
-			if( y == e->cursor.y_index - e->cursor.y_offset )
-			{
-				int len = e->line_buff->dcount - e->cursor.x_offset;
-				if( len < 0 ) 
-					len = 0;
-				if( len > e->window.cols -( e->line_nums + 1) )
-					len = e->window.cols - (e->line_nums + 1);
-				append_to_buffer( buffer, &e->line_buff->to_display[e->cursor.x_offset], len );
-			}
-			//other line stuff	
-			else
-			{
-				int len = temp->dcount - e->cursor.x_offset;
-				if( len < 0 ) len = 0;
-				if( len > e->window.cols - (e->line_nums + 1 ) ) len = e->window.cols - (e->line_nums + 1);
-				append_to_buffer( buffer, &temp->to_display[e->cursor.x_offset], len );
-			}
-			append_to_buffer( buffer, "\x1b[K", 3 ); ////clear rowl;
-		
-			// print new line at end of line!
-		if( y < e->window.rows - 2 )
-				append_to_buffer( buffer, "\n\r", 2 );
-			temp = temp->next;
-		}
-		else
-		{
-			if( y < e->window.rows - 1 )
-			{
-				append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
-				append_to_buffer( buffer, "~\n\r", 3 );
-			}
-		}
-	}
-	append_to_buffer(buffer, "\e[?25h",6); // show cursor	
-	write( STDOUT_FILENO, buffer->contents, buffer->count );
-	free( buffer->contents );
-	free( buffer );
-	return;	
-}
-
-
-void print_mode( Editor *e )
-{
-	char bottom[40];
-	sprintf( bottom, "\x1b[%d;%dH", e->window.rows, 1 );
-	write( STDOUT_FILENO, bottom, strlen( bottom ) );
-	char clear_row[40];
-	sprintf( clear_row, "\x1b[K" );
-	write( STDOUT_FILENO, clear_row, strlen( clear_row ) );
-	char buff[80];
-	if( e->mode == NORMAL )
-		sprintf( buff, "\033[33;44mNORMAL MODE \033[0m%s", e->debug_message );
-	else if( e->mode == INSERT )
-		sprintf( buff, "\033[33;44mINSERT MODE \033[0m%s", e->debug_message );
-	write( STDOUT_FILENO, buff, strlen( buff ) );
-	sprintf( buff, "\033[0m" );
-	write( STDOUT_FILENO, buff, strlen( buff ) );
-	return;
-}
-
-
-
-void update_and_print_ui( Editor * e )
-{
-	print_mode( e );
-	print_cursor( &e->cursor, e->mode );
-}
-
-
 void render( Editor * e )
 {
 	update( e );
 	update_cursor( &e->cursor, e->line_buff );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
-	print_chars_to_screen( e );
-	update_and_print_ui( e );
+ 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums );
+	print_mode( &e->window, e->mode, e->debug_message );
+	print_cursor( &e->cursor, e->mode );
 	return;
 }
-
 
 //I hate windows! >:(
 char getch( Editor * e ) 
@@ -463,6 +341,7 @@ char getch( Editor * e )
 	#endif
   return c;
 }
+
 
 
 void insert_char_to_buff( Editor * e, char c )
@@ -502,16 +381,28 @@ void insert_char_to_buff( Editor * e, char c )
 
 void remove_line_2( Editor * e )
 {
-	
-	Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
-	Line_data * line_to_appended_to = temp->prev;
-	Line_data * next_line = temp->next;
-	line_to_appended_to->next = next_line;
-	if( next_line != NULL )
-		next_line->prev = line_to_appended_to;
-	e->lines.count--;
-	free( temp->data );
-	free( temp );
+	if( e->cursor.y_index > 0 )
+	{
+		Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
+		Line_data * line_to_appended_to = temp->prev;
+		Line_data * next_line = temp->next;
+		line_to_appended_to->next = next_line;
+		
+		if( next_line != NULL )
+			next_line->prev = line_to_appended_to;
+		e->lines.count--;
+		free( temp->data );
+		free( temp );
+	}
+	else
+	{
+		Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
+		e->lines.head = temp->next;
+		update_list_of_lines( &e->lines );
+		e->lines.count--;
+		free( temp->data );
+		free( temp );
+	}
 	return;
 }
 
@@ -527,12 +418,14 @@ void remove_line( Editor * e )
 	if( next_line != NULL )
 		next_line->prev = line_to_appended_to;
 	int size = line_to_appended_to->count + temp->count;
+
 	char buff[size];
 	memset( buff, 0, size );
 	strncat( buff, line_to_appended_to->data, line_to_appended_to->count );
 	strncat( buff, temp->data, temp->count );
 	reset_buffer( e->line_buff );
 	append_to_buffer( e->line_buff, buff, size );
+	
 	e->lines.count--;
 	free( temp->data );
 	free( temp );
@@ -589,22 +482,35 @@ void backspace( Editor * e, char c )
 
 void add_new_line( Editor * e, char * data, int size_of_data )
 {
-	Line_data * current_line  = e->lines.list_of_lines[e->cursor.y_index];
-	Line_data * new_line = calloc( 1, sizeof( Line_data ) );
-	Line_data * next_line = current_line->next;
-	current_line->next = new_line;
-	new_line->prev = current_line;
-	new_line->next = next_line;
-	if( next_line != NULL )
-		next_line->prev = new_line;
-//	new_line->count = size_of_data;
-	new_line->copacity = size_of_data + 50;
-	new_line->data = calloc( new_line->copacity, sizeof( char ) );
-	reset_buffer( e->line_buff );	
-	append_to_buffer( e->line_buff, data, size_of_data );
-	//for( int i = 0; i < size_of_data; i++ )
-	//	new_line->data[i] = data[i];
-
+	if( e->cursor.y_index >= 0 )
+	{
+		Line_data * current_line  = e->lines.list_of_lines[e->cursor.y_index];
+		Line_data * next_line = current_line->next;
+		Line_data * new_line = calloc( 1, sizeof( Line_data ) );
+		current_line->next = new_line;
+		new_line->prev = current_line;
+		new_line->next = next_line;
+		if( next_line != NULL )
+			next_line->prev = new_line;
+		
+		new_line->copacity = size_of_data + 50;
+		new_line->data = calloc( new_line->copacity, sizeof( char ) );
+		reset_buffer( e->line_buff );	
+		append_to_buffer( e->line_buff, data, size_of_data );	
+	}
+	else if( e->cursor.y_index < 0 )
+	{
+		Line_data * new_line = calloc( 1, sizeof( Line_data ) );
+		new_line->prev = NULL;
+		new_line->next = e->lines.head;
+		e->lines.head->prev = new_line;
+		e->lines.head = new_line;
+		update_list_of_lines( &e->lines );
+		new_line->copacity = size_of_data + 50;
+		new_line->data = calloc( new_line->copacity, sizeof( char ) );
+		reset_buffer( e->line_buff );	
+		append_to_buffer( e->line_buff, data, size_of_data );	
+	}
 	return;
 }
 
@@ -648,7 +554,8 @@ void enter_key( Editor * e, char c )
 void search( Editor * e )
 {
 	strcpy( e->debug_message, "" );
-	update_and_print_ui( e );
+	print_mode( &e->window, e->mode, e->debug_message );
+	print_cursor( &e->cursor, e->mode );
 	// move curor down to menu bar
 	char buff[40];
 	sprintf( buff, "\x1b[%d;%dH", e->window.rows, 13 );
@@ -723,6 +630,7 @@ void search( Editor * e )
 	render( e ); 
 	return;
 }
+
 
 
 void move_cursor_up( Editor * e )
@@ -823,6 +731,7 @@ void move_cursor_right( Editor * e )
 	return;
 }
 
+
 #ifdef _WIN32
 	#define BACKSPACE 8
 void events_move_cursor_insert_windows( Editor * e, int c ) 	
@@ -880,7 +789,8 @@ void events_insert( Editor * e )
 				write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
 				push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
 				update_cursor( &e->cursor, e->line_buff );
-				update_and_print_ui( e );
+				print_mode( &e->window, e->mode, e->debug_message );
+				print_cursor( &e->cursor, e->mode );
 			#elif __linux__
 				if( !events_move_cursor_insert_linux( e ) )
 				{
@@ -889,7 +799,8 @@ void events_insert( Editor * e )
 					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
 					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
 					update_cursor( &e->cursor, e->line_buff );
-					update_and_print_ui( e );
+					print_mode( &e->window, e->mode, e->debug_message );
+					print_cursor( &e->cursor, e->mode );
 				}
 			#endif
 		}break;
@@ -949,7 +860,8 @@ void events_normal( Editor * e )
 		{
 			e->mode = INSERT;
 			update_cursor( &e->cursor, e->line_buff );
-			update_and_print_ui( e );
+			print_mode( &e->window, e->mode, e->debug_message );
+			print_cursor( &e->cursor, e->mode );
 		}break;
 		#ifdef __linux__
 			case 27: // escape
@@ -969,12 +881,14 @@ void events_normal( Editor * e )
 			{
 				case 'd':
 				{
+					/*
 					push_del_line_to_undo_stack( e );
 					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
 					remove_line_2( e );
 					update_list_of_lines( &e->lines );
 					update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 					render( e );
+					*/
 				}break;
 			}
 		}break;
@@ -983,8 +897,6 @@ void events_normal( Editor * e )
 		{
 			undo_change( e );
 		}break;
-		
-
 		case CTRL_KEY( 'c' ):
 		{
 			//shift_everything();
@@ -996,7 +908,8 @@ void events_normal( Editor * e )
 				save_file( e->file_name, &e->lines );
 				strcpy( e->debug_message, ": file saved" );
 				e->saved = true;
-				update_and_print_ui( e );	
+				print_mode( &e->window, e->mode, e->debug_message );
+				print_cursor( &e->cursor, e->mode );
 		}break;
 		case CTRL_KEY( 'q' ):
 		{
@@ -1020,6 +933,8 @@ void events_normal( Editor * e )
 	}
 	return;
 }
+
+
 
 
 void events( Editor * e )
