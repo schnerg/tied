@@ -17,17 +17,8 @@
 #include "fileio.h"
 #include "search.h"
 #include "io.h"
+#include "undo_redo.h"
 
-
-typedef struct
-{
-	bool line_added;
-	bool line_deleted;
-	int line_num;
-	int num_lines_changed;
-	int index;
-	Buff * data;
-}Change;
 
 
 
