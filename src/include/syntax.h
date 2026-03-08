@@ -1,7 +1,11 @@
 #ifndef syntax_h
 #define syntax_h
-#include "common.h"
-#include "main.h"
+
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include "buffer.h"
 
 void syntax_highlighting(Buff * buffer, char * str, const int len);
 
