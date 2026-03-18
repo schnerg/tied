@@ -26,7 +26,7 @@ void index_to_rx( Cursor * c, Buff * cbuff, int line_nums )
 		c->rx++;
 	}
 	c->rx -= c->x_offset;
-	c->rx += line_nums +1;	
+	c->rx += line_nums + 1;	
 	return;
 }
 

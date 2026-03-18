@@ -4,7 +4,6 @@
 
 
 void update( Editor * e  );
-
 void add_new_line( Editor * e, char * data, int size_of_data );
 
 
@@ -14,12 +13,6 @@ void init_editor_settings( Editor * e )
 	e->mode = NORMAL;
 	return;
 }
-
-
-
-
-
-
 
 void init_undo_redo_stacks( Editor * e )
 {
@@ -72,9 +65,6 @@ void render( Editor * e )
 	print_cursor( &e->cursor, e->mode );
 	return;
 }
-
-
-
 
 
 

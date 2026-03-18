@@ -1,11 +1,10 @@
 #include "include/fileio.h"
 
 
-
 void save_file( char * file_name, Lines_data * lines )
 {
 	FILE * fp = fopen( file_name, "w" );
- 	Line_data * temp = lines->head;;
+ 	Line_data * temp = lines->head;
 	for( int row = 0; row < lines->count; row++ )
 	{
 		for( int col =0; col < temp->count; col++ )
@@ -69,3 +68,4 @@ int read_file( Lines_data * lines, char * file_name )
 	fclose(fp);
 	return 0;
 }
+
