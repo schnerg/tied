@@ -1,7 +1,5 @@
 #include "include/editor.h"
 
-#define CTRL_KEY(k) ((k) & 0x1f)
-
 
 void update( Editor * e  );
 void add_new_line( Editor * e, char * data, int size_of_data );

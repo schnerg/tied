@@ -2,8 +2,6 @@
 #define editor_h
 
 
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -12,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "global.h"
 #include "py_list.h"
 #include "screen.h"
 #include "buffer.h"
@@ -35,11 +34,8 @@ typedef struct
 	bool can_undo;	
 	bool can_redo;	
 	//int mode;
-	enum modes
-	{
-		NORMAL,
-		INSERT
-	}mode;
+	MODE mode;
+	
 	Cursor cursor;
 //line stuff
 	Lines_data lines;

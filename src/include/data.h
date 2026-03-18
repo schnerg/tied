@@ -1,16 +1,17 @@
 #ifndef data_h
 #define data_h
 
-#define TAB_STOP 4
 #include <stdlib.h>
+#include "global.h"
+
 
 typedef struct Line_data
 {
 	char * data;
 	char * to_display;
-	int dcount;
-	int copacity;
-	int count;
+	i32 dcount;
+	i32 copacity;
+	i32 count;
 	struct Line_data * next;
 	struct Line_data * prev;
 }Line_data;

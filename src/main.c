@@ -8,7 +8,8 @@ int main( int argc, char * argv[] )
 		if( strlen( argv[1] ) < 255 )
 			strcpy( e.file_name, argv[1] );	
 		else
-			exit( 1 );
+			die( "main(): File name too long." );
+		
 		init( &e  );
 		render( &e );
 		while( e.done == false )
@@ -16,6 +17,10 @@ int main( int argc, char * argv[] )
 			events( &e );
 		}
 		quit( &e );
+	}
+	else
+	{
+		printf("No file\n");
 	}
 	return 0;
 }
