@@ -17,7 +17,9 @@ void init_undo_redo_stacks( Editor * e )
 	e->can_undo = false;
 	e->can_redo = false;
 	e->undo_stack = init_py_list( sizeof( Change * ) );
+	if( e->undo_stack == NULL ) die( "init_undo_redo_stacks(): failed to init undo_stack.");
 	e->redo_stack = init_py_list( sizeof( Change * ) );
+	if( e->redo_stack == NULL ) die( "init_undo_redo_stacks(): failed to init redo_stack.");
 	return;
 }
 

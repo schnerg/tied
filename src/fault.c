@@ -20,8 +20,6 @@ void die( char * message )
 
 void alert( char * message )
 {
-	char buffer[1000];
-	error_message( buffer, message );
-	perror( buffer );
+	perror( message );
 	return;
 }

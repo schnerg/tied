@@ -9,7 +9,6 @@ int main( int argc, char * argv[] )
 			strcpy( e.file_name, argv[1] );	
 		else
 			die( "main(): File name too long." );
-		
 		init( &e  );
 		render( &e );
 		while( e.done == false )
@@ -19,8 +18,6 @@ int main( int argc, char * argv[] )
 		quit( &e );
 	}
 	else
-	{
-		printf("No file\n");
-	}
+		printf("Usage:\ntied <path/to/file.txt>\n");
 	return 0;
 }

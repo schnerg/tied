@@ -33,10 +33,15 @@ void update_line( Line_data * line )
 }
 
 
-void realloc_data( Line_data * temp )
+void realloc_data( Line_data * line )
 {
-	temp->copacity *= 2;
-	temp->data = realloc( temp->data, temp->copacity * sizeof( char ) );
+	i32 new_copacity = line->copacity * 2;
+	char * temp_data = realloc( line->data, new_copacity * sizeof( char ) );
+	if( temp_data != NULL )
+	{
+		line->copacity = new_copacity;
+		line->data = temp_data;
+	}
 	return;
 }
 
@@ -68,6 +73,7 @@ void resize_list( Lines_data * lines )
 	{
 		if( lines->count >= lines->copacity -1 )
 		{
+
 			lines->copacity *= 2;
 			lines->list_of_lines = realloc( lines->list_of_lines, lines->copacity * sizeof( Line_data * ) );
 			if(lines->list_of_lines == NULL ) die( "resize_list(): failed to reallocate memory for list_of_lines." );

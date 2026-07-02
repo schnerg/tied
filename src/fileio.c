@@ -1,9 +1,14 @@
 #include "include/fileio.h"
 
-
-void save_file( char * file_name, Lines_data * lines )
+int save_file( char * file_name, Lines_data * lines )
 {
+	errno = 0;
 	FILE * fp = fopen( file_name, "w" );
+	if( fp == NULL )
+	{ 
+		alert( "save_file(): Failed to open file.\n"); 
+		return 1;
+	}
  	Line_data * temp = lines->head;
 	for( int row = 0; row < lines->count; row++ )
 	{
@@ -16,7 +21,7 @@ void save_file( char * file_name, Lines_data * lines )
 			fputc( '\n', fp );
 	}
 	fclose( fp );
-	return;
+	return 0;
 }
 
 

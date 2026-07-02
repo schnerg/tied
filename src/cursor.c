@@ -22,7 +22,7 @@ void index_to_rx( Cursor * c, Buff * cbuff, int line_nums )
 	for( int i = 0; i < c->index; i++ )
 	{ 
 		if( cbuff->contents[i] == '\t' )
-			c->rx += ( TAB_STOP -1 ) - ( c->rx % TAB_STOP );
+			c->rx += ( TAB_STOP - 1 ) - ( c->rx % TAB_STOP );
 		c->rx++;
 	}
 	c->rx -= c->x_offset;
@@ -56,7 +56,7 @@ void print_cursor( Cursor * c, int mode )
 	if( mode == 1 ) // insert mode
 		write( STDOUT_FILENO, bar, strlen( bar ) );
 	char buff[40];
-	sprintf( buff, "\x1b[%d;%dH", c->y_index - c->y_offset + 1, c->rx + 1 );
+	snprintf( buff, 40, "\x1b[%d;%dH", c->y_index - c->y_offset + 1, c->rx + 1 );
 	write( STDOUT_FILENO, buff, strlen( buff ) );
 	return;
 }

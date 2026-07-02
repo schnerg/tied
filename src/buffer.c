@@ -3,10 +3,17 @@
 Buff * init_buffer()
 {
 	Buff * buff = calloc( 1, sizeof( Buff ) );
+	if( buff == NULL )
+		return NULL;
 	buff->count = 0;
 	buff->dcount = 0;
 	buff->copacity = 50;
 	buff->contents = calloc( buff->copacity, sizeof( char ) );
+	if( buff->contents == NULL )
+	{
+		free( buff );
+		return NULL;
+	}
 	buff->to_display = NULL;
 	buff->num_lines_changed = 0;
 	buff->line_deleted = false;
@@ -24,18 +31,25 @@ void reset_buffer( Buff * buff )
 }
 
 
-void resize_buffer( Buff * buff )
+int resize_buffer( Buff * buff )
 {
-	buff->copacity *= 2;
-	buff->contents = realloc( buff->contents, buff->copacity * sizeof( char ) );
-	return;
+	i32 temp_copacity = buff->copacity * 2;
+	//buff->copacity *= 2;
+	char * temp = realloc( buff->contents, temp_copacity * sizeof( char ) );
+	if( buff->contents != NULL )
+	{
+		buff->contents = temp;
+		buff->copacity = temp_copacity;
+		return 0;
+	}
+	return 1;
 }
 
 
 void append_to_buffer( Buff * buff, char * str, int size )
 {
 	while( buff->count + size >= buff->copacity - 1 )
-			resize_buffer( buff );
+		resize_buffer( buff );
 	int j = buff->count;
 	for( int i = 0; i < size; i++ )
 		buff->contents[j++] = str[i];
@@ -55,6 +69,7 @@ void write_line_buffer_to_line( Line_data * line, Buff * buff )
 	return;
 }
 
+
 void update_line_buffer_td( Buff * line_buff )
 {
 	int i, j;
@@ -66,9 +81,11 @@ void update_line_buffer_td( Buff * line_buff )
 	for( i = 0; i < line_buff->count; i++ )
 		if( line_buff->contents[i] == '\t' )
 			tabs++;
-	
-	line_buff->to_display = malloc( ( line_buff->count + ( tabs * TAB_STOP -1 ) + 1) * sizeof( char ) );
-	
+// this line here 	
+	line_buff->to_display = malloc( ( line_buff->count + ( tabs * ( TAB_STOP - 1 )  ) + 1 ) * sizeof( char ) );
+	if( line_buff->to_display == NULL )
+		die( "update_line_buffer_td():failed to allocate memory for line buffer" );
+
 	j=0;
 	for( i = 0; i < line_buff->count; i++ )
 	{
@@ -83,8 +100,6 @@ void update_line_buffer_td( Buff * line_buff )
 	}
 	line_buff->to_display[j] = '\0';
 	line_buff->dcount = j;
-	
-
 	return;
 }
 
@@ -101,6 +116,8 @@ void update_line_buffer( Buff * line_buff, Line_data * line )
 Buff * init_line_buffer()
 {
 	Buff * line_buff = init_buffer();
+	if( line_buff == NULL )
+		die( "init_line_buffer(): failed to init line_buffer" );
 	return line_buff;
 }
 

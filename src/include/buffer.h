@@ -22,7 +22,7 @@ typedef struct
 }Buff;
 
 
-void resize_buffer( Buff * buff );
+int resize_buffer( Buff * buff );
 void append_to_buffer( Buff  * buff, char * str, int size );
 void reset_buffer( Buff * buff );
 Buff * init_buffer();

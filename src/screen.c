@@ -3,14 +3,14 @@
 
 void enter_alt_screen()
 {
-	write( STDOUT_FILENO, "\x1b[?1049h", 8 );
+	if( write( STDOUT_FILENO, "\x1b[?1049h", 8 ) == -1 ) alert( "failed to enter alt screen.\n" );
 	return;
 }
 
 
 void leave_alt_screen()
 {
-	write( STDOUT_FILENO, "\x1b[?1049l", 8 );
+	if( write( STDOUT_FILENO, "\x1b[?1049l", 8 ) == -1 ) alert( "failed to leave alt screen\n" );
 	return;
 }
 
@@ -80,6 +80,8 @@ bool get_window_size( Window * window )
 		}
 	return false;  
 } 
+
+
 void editorRefreshScreen() 
 {
   write(STDOUT_FILENO, "\e[?25l", 6); // hide cursor
@@ -87,13 +89,14 @@ void editorRefreshScreen()
 	return;
 }
 
+
 void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff  )
 {
 	if( c->rx > window->cols || c->rx < c->x_offset )
 	{
 		c->x_offset = 0;
-		
- 		index_to_rx( c, cbuff, line_nums );
+ 		
+		index_to_rx( c, cbuff, line_nums );
 		while( c->rx > window->cols )
 		{
 			c->x_offset += window->cols / 2 ;
@@ -110,6 +113,8 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 	c->last_y_offset = c->y_offset;
 	return;
 }
+
+
 //TODO: rename function! >:(
 void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums )
 {
