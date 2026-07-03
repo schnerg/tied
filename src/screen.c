@@ -122,12 +122,18 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
 	char buff[window->cols + 1];
-	int i = 0;
-	int tabs = 0;
 	for( int y = 0; y < window->rows - 1; y++ )
 	{
 		if( y < lines->count - c->y_offset )
 		{	
+		
+			if( file_tree_toggle == true )
+			{
+				for( int i = 0; i < FILE_TREE_WIDTH - 0; i++ )
+					append_to_buffer( buffer, " ", 1 );
+				append_to_buffer( buffer, "|", 1 );
+			}
+			
 			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
 			//append line num;
 			char line_num[40];
@@ -135,6 +141,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 			int line_padding  = line_nums - strlen( line_num );
 			for( int i =0; i < line_padding; i++ )
 				append_to_buffer( buffer, " ", 1 );
+
 			append_to_buffer( buffer, "\033[0;33m", 7 );
 			append_to_buffer( buffer, line_num, strlen(line_num) );
 			append_to_buffer( buffer, "\033[0m", 4 );
@@ -146,20 +153,36 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				int len = line_buff->dcount - c->x_offset;
 				if( len < 0 ) 
 					len = 0;
-				if( len > window->cols -( line_nums + 1) )
-					len = window->cols - (line_nums + 1);
+				
+				if( file_tree_toggle == true )
+				 if( len > window->cols - ( line_nums + 1) - FILE_TREE_WIDTH )
+					len = window->cols - ( line_nums + 1 ) - FILE_TREE_WIDTH;
+				
+				if( file_tree_toggle == false )
+					if( len > window->cols - ( line_nums + 1) )
+						len = window->cols - ( line_nums + 1 );
+				
 				append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
 			}
+		
 			//other line stuff	
 			else
 			{
 				int len = temp->dcount - c->x_offset;
 				if( len < 0 ) len = 0;
-				if( len > window->cols - ( line_nums + 1 ) ) len = window->cols - ( line_nums + 1 );
-				append_to_buffer( buffer, &temp->to_display[ c->x_offset], len );
+			
+				if( file_tree_toggle == true )
+					if( len > window->cols - ( line_nums + 1 ) - FILE_TREE_WIDTH )
+						len = window->cols - ( line_nums + 1 ) - FILE_TREE_WIDTH;
+				
+				if( file_tree_toggle == false )
+					if( len > window->cols - ( line_nums + 1 ) )
+						len = window->cols - ( line_nums + 1 );
+
+				append_to_buffer( buffer, &temp->to_display[c->x_offset], len );
 			}
 			append_to_buffer( buffer, "\x1b[K", 3 ); ////clear rowl;
-		
+			
 			// print new line at end of line!
 		if( y < window->rows - 2 )
 				append_to_buffer( buffer, "\n\r", 2 );

@@ -21,12 +21,14 @@
 #include "io.h"
 #include "undo_redo.h"
 #include "syntax.h"
+#include "file_tree.h"
 
 
 
 
 typedef struct
 {
+	File_tree tree;
 	//undo_redo_stuffs
 	Buff * line_buff;
 	py_list_t * undo_stack;

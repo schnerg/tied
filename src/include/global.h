@@ -6,5 +6,4 @@
 #include "variables.h"
 #include "types.h"
 
-
 #endif

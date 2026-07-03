@@ -537,6 +537,11 @@ void events_normal( Editor * e )
 		{
 			e->done = true;
 		}break;
+		case CTRL_KEY( 'f' ):
+		{
+			toggle_file_tree( &e->tree );
+			render( e );
+		}break;
 		case 13:// enter key
 		{
 			move_cursor_down( e );
