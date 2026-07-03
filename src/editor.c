@@ -218,10 +218,13 @@ void enter_key( Editor * e, char c )
 	e->lines.count++;
 	e->saved = false;
 	update_list_of_lines( &e->lines );
-	if( e->cursor.y_index == e->window.rows - 2 )
-		e->cursor.y_offset++;	
+	
 	e->cursor.y_index++;
+	if( e->cursor.y_index >= e->window.rows - 2 )
+		e->cursor.y_offset++;	
+
 	e->cursor.last_y_offset = e->cursor.y_offset;
+
 	e->cursor.index = 0;
 	e->cursor.last_index = 0;
 	e->cursor.x_offset = 0;
@@ -454,13 +457,18 @@ void events_normal( Editor * e )
 			update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
 			render( e );
 		}break;
+		
 		case 'o':
 		{
-			e->cursor.index = 0;//	e->lines.list_of_lines[e->cursor.y_index]->count;
+			//e->cursor.index = 0;
+			e->cursor.index = e->lines.list_of_lines[e->cursor.y_index]->count;
 			enter_key( e, c );
 			e->mode = INSERT;
 			update_cursor( &e->cursor, e->line_buff );
+			print_mode( &e->window, e->mode, e->debug_message );
+			print_cursor( &e->cursor, e->mode );
 		}break;
+		
 		case 'i':
 		{
 			e->mode = INSERT;
