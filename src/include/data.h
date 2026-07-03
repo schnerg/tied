@@ -2,6 +2,7 @@
 #define data_h
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include "global.h"
 
 
@@ -12,6 +13,7 @@ typedef struct Line_data
 	i32 dcount;
 	i32 copacity;
 	i32 count;
+	bool is_dir;
 	struct Line_data * next;
 	struct Line_data * prev;
 }Line_data;

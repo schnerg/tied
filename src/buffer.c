@@ -1,5 +1,6 @@
 #include "include/buffer.h"
 
+
 Buff * init_buffer()
 {
 	Buff * buff = calloc( 1, sizeof( Buff ) );
@@ -120,5 +121,3 @@ Buff * init_line_buffer()
 		die( "init_line_buffer(): failed to init line_buffer" );
 	return line_buff;
 }
-
-

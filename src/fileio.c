@@ -1,5 +1,6 @@
 #include "include/fileio.h"
 
+
 int save_file( char * file_name, Lines_data * lines )
 {
 	errno = 0;
@@ -31,7 +32,7 @@ int read_file( Lines_data * lines, char * file_name )
 	resize_list( lines );
 	lines->head = calloc( 1, sizeof( Line_data ) );
 	lines->count = 1;
-	lines->head->next=NULL;
+	lines->head->next = NULL;
 	lines->head->prev = NULL;
 	lines->head->data = calloc( 50, sizeof( char ) );
 	lines->head->count = 0;

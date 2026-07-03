@@ -54,30 +54,33 @@ void init_line( Line_data * temp )
 	if( temp->next->data == NULL ) die( "init_line(): failed to calloc memory for next lines data." );
 	temp->next->copacity = 50;
 	temp->next->count = 0;
-	temp->next->dcount =0;
+	temp->next->dcount = 0;
+	temp->next->is_dir = false;
+
 	temp->next->to_display = NULL;
 	temp->next->next = NULL;
+	//temp->next->prev = NULL;
 	return;
 }
 
 
+
 void resize_list( Lines_data * lines )
 {
+	
 	if( lines->list_of_lines == NULL )
 	{
 		lines->copacity = 10;
 		lines->list_of_lines = calloc( lines->copacity, sizeof( Line_data* ) );
 		if(lines->list_of_lines == NULL ) die( "resize_list(): failed to allocate memory for list_of_lines." );
+		return;
 	}
-	else
+	
+	if( lines->count >= lines->copacity -1 )
 	{
-		if( lines->count >= lines->copacity -1 )
-		{
-
-			lines->copacity *= 2;
-			lines->list_of_lines = realloc( lines->list_of_lines, lines->copacity * sizeof( Line_data * ) );
-			if(lines->list_of_lines == NULL ) die( "resize_list(): failed to reallocate memory for list_of_lines." );
-		}
+		lines->copacity *= 2;
+		lines->list_of_lines = realloc( lines->list_of_lines, lines->copacity * sizeof( Line_data * ) );
+		if(lines->list_of_lines == NULL ) die( "resize_list(): failed to reallocate memory for list_of_lines." );
 	}
 	return;	
 }

@@ -115,8 +115,7 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 }
 
 
-//TODO: rename function! >:(
-void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums )
+void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree )
 {
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
@@ -125,15 +124,29 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	for( int y = 0; y < window->rows - 1; y++ )
 	{
 		if( y < lines->count - c->y_offset )
-		{	
-		
+		{		
+
+
+
+//	 filetree
 			if( file_tree_toggle == true )
 			{
-				for( int i = 0; i < FILE_TREE_WIDTH - 0; i++ )
-					append_to_buffer( buffer, " ", 1 );
+				if( y < tree->lines.count )
+					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
+					{
+						if( i < tree->lines.list_of_lines[y]->count )	
+							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->data[i], 1 );
+						else
+							append_to_buffer( buffer, " ", 1 );
+					}
+				else
+					for( int i = 0; i < FILE_TREE_WIDTH - 1; i++ )
+						append_to_buffer( buffer, " ", 1 );
 				append_to_buffer( buffer, "|", 1 );
 			}
-			
+		
+
+
 			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
 			//append line num;
 			char line_num[40];
@@ -157,7 +170,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( file_tree_toggle == true )
 				 if( len > window->cols - ( line_nums + 1) - FILE_TREE_WIDTH )
 					len = window->cols - ( line_nums + 1 ) - FILE_TREE_WIDTH;
-				
+			
 				if( file_tree_toggle == false )
 					if( len > window->cols - ( line_nums + 1) )
 						len = window->cols - ( line_nums + 1 );

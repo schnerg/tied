@@ -1,5 +1,7 @@
 # TIED: The Terminaly Ill editor
 
+NO AI WAS USED IN THE MAKING OF THIS EDITOR! :D
+
 This text editor is rubbish. 
 
 It only kinda works.
@@ -8,7 +10,6 @@ This editor doesn't work with unicode.
 
 it has windows support! :D
 this editor works best on linux.
-
 
 
 ##Installation

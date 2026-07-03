@@ -28,6 +28,7 @@ void init( Editor * e )
 {
 	enable_Raw_mode( &e->window );
 	init_editor_settings( e );
+ 	init_file_tree( &e->tree );
 	get_window_size( &e->window );
 	strcpy( e->debug_message, "" );
 	e->done = false;
@@ -60,7 +61,7 @@ void render( Editor * e )
 	update_cursor( &e->cursor, e->line_buff );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
- 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums );
+ 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree );
 	print_mode( &e->window, e->mode, e->debug_message );
 	print_cursor( &e->cursor, e->mode );
 	return;

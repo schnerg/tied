@@ -15,7 +15,6 @@ void init_cursor( Cursor * c )
 }
 
 
-
 void index_to_rx( Cursor * c, Buff * cbuff, int line_nums )
 {
 	c->rx = 0;
