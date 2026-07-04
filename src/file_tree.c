@@ -1,8 +1,15 @@
 #include "include/file_tree.h"
 
 
+void expand_tree_at_point_of_cursor()
+{
+	return;
+}
+
+
 void sort_file_tree( File_tree * tree )
 {
+
 	// sort alphabetically
 	Line_data * temp = NULL;
 	bool sorted = false;
@@ -37,6 +44,7 @@ void sort_file_tree( File_tree * tree )
 			}
 		}
 	}
+
 
 /*
 
@@ -76,7 +84,7 @@ void read_working_dir( File_tree * tree )
 	i32 files = 0;
 	Line_data * temp = tree->lines.head->next;
 	Line_data * prev = tree->lines.head;
-	tree->lines.count = 1;
+	tree->lines.count = 0;
 	i32 i;
 	while( ( entry = readdir( directory ) ) != NULL )
 	{ 
@@ -86,7 +94,6 @@ void read_working_dir( File_tree * tree )
 		for( i = 0; i < 50 && i < strlen(entry->d_name); i++ )
 			temp->data[i] = entry->d_name[i];	
 		
-
 		if( i >= 50 )
 			temp->data[i] = '\0';
 		else
@@ -103,9 +110,9 @@ void read_working_dir( File_tree * tree )
 		resize_list( &tree->lines );
 	}
 
-	tree->lines.count--;
-	if( tree->lines.count == 0 )
-		tree->lines.count++;
+//	tree->lines.count--;
+//	if( tree->lines.count == 0 )
+//		tree->lines.count++;
 	update_list_of_lines( &tree->lines );
 	closedir( directory );	
 	return; 
@@ -122,8 +129,11 @@ int get_working_dir( File_tree * tree )
 
 void init_file_tree( File_tree * tree )
 {
+	init_cursor( &tree->cursor);
+	tree->cursor.index = 1;
+	tree->cursor.y_index = 1;
+	
 	if( get_working_dir( tree ) == 1 ) die( "could not get working directory. :( ");
-	tree->y_offset = 0;
 	tree->lines.head = calloc( 1, sizeof( Line_data ) );
 	if( tree->lines.head == NULL ) die( "could not allocate memory for file_tree" );
 	

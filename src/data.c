@@ -56,7 +56,7 @@ void init_line( Line_data * temp )
 	temp->next->count = 0;
 	temp->next->dcount = 0;
 	temp->next->is_dir = false;
-
+	temp->head = NULL;
 	temp->next->to_display = NULL;
 	temp->next->next = NULL;
 	//temp->next->prev = NULL;

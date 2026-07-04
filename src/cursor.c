@@ -53,7 +53,7 @@ void print_cursor( Cursor * c, int mode )
 {
 	char bar[] = "\e[5 q"	;
 	char block[] = "\e[1 q"	;
-	if( mode == 0 ) // normal mode 
+	if( mode == 0 || mode == 2 ) // 0 normal mode 2 file tree mode
 		write( STDOUT_FILENO, block, strlen( block ) );
 	if( mode == 1 ) // insert mode
 		write( STDOUT_FILENO, bar, strlen( bar ) );

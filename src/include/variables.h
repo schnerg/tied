@@ -7,7 +7,8 @@
 typedef enum
 {
 	NORMAL,
-	INSERT
+	INSERT,
+	FLTREE	
 }MODE;
 
 extern bool file_tree_toggle;

@@ -17,17 +17,16 @@
 
 #include "data.h"
 #include "global.h"
+#include "cursor.h"
 
 
 typedef struct 
 {
+	Cursor cursor;
 	char working_directory[1024];
-	
 	Lines_data lines; 
-	
 	i32 count;
 	i32 copacity;
-	i32 y_offset;
 }File_tree;
 
 

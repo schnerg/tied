@@ -243,6 +243,8 @@ void print_mode( Window * window, int mode, char * debug_message )
 		sprintf( buff, "\033[33;44mNORMAL MODE \033[0m%s", debug_message );
 	else if( mode == 1 ) // insert mode
 		sprintf( buff, "\033[33;44mINSERT MODE \033[0m%s", debug_message );
+	else if( mode == 2 )
+		sprintf( buff, "\033[33;44mFLTREE MODE \033[0m%s", debug_message );
 	write( STDOUT_FILENO, buff, strlen( buff ) );
 	sprintf( buff, "\033[0m" );
 	write( STDOUT_FILENO, buff, strlen( buff ) );

@@ -375,6 +375,7 @@ bool events_move_cursor_insert_linux( Editor * e )
 #endif
 
 
+
 void events_insert( Editor * e )
 {
 	int c = getch( &e->window );
@@ -422,6 +423,7 @@ void events_insert( Editor * e )
 	return;
 }
 
+
 char comand_mode( Editor * e )
 {
 	char underline[] = "\e[4 q";
@@ -438,6 +440,7 @@ char comand_mode( Editor * e )
 	write( STDOUT_FILENO, block, strlen( block ) );
 	return c;
 }
+
 
 void events_normal( Editor * e )
 {	
@@ -483,6 +486,7 @@ void events_normal( Editor * e )
 				events_move_cursor_insert_linux( e );	
 			}break;
 		#endif
+
 		case CTRL_KEY( 'r' ):
 		{
  			redo_change( e->redo_stack, e->undo_stack, &e->cursor, &e->lines, e->line_buff, &e->window, &e->can_redo,  &e->can_undo );
@@ -543,6 +547,16 @@ void events_normal( Editor * e )
 			toggle_file_tree( &e->tree );
 			render( e );
 		}break;
+		case CTRL_KEY( 'h' ):
+		{
+			if( toggle_file_tree )
+			{
+				e->mode = FLTREE;
+			//update_cursor( &e->cursor, e->line_buff );
+				print_mode( &e->window, e->mode, e->debug_message );
+				print_cursor( &e->tree.cursor, e->mode );
+			}
+		}break;
 		case 13:// enter key
 		{
 			move_cursor_down( e );
@@ -557,6 +571,98 @@ void events_normal( Editor * e )
 
 
 
+void events_file_tree( Editor * e ) 
+{
+	int c = getch( &e->window );
+	
+	#ifdef _WIN32	
+		if( c <= 40 && c >= 37 )
+		{
+			switch( c )
+			{
+				case 38:
+				{
+					if( e->tree.cursor.index > 1 )
+					{
+						e->tree.cursor.index--;
+						e->tree.cursor.y_index--;
+						print_cursor( &e->tree.cursor, e->mode );
+					}
+				}break;
+				case 40:
+				{
+					if( e->tree.cursor.index < e->tree.lines.count - 1 )
+					{
+						e->tree.cursor.index++;
+						e->tree.cursor.y_index++;
+						print_cursor( &e->tree.cursor, e->mode );
+					}
+				}break;
+			}
+			return;
+		}
+	#endif
+	switch( c )
+	{
+		#ifdef __linux__
+			case 27: // escape
+			{
+				char temp;
+				if( ( temp = getch( &e->window ) ) != -1 )
+				{
+					temp = getch( &e->window );
+					switch( temp )
+					{
+						case 'A':
+						{
+							if( e->tree.cursor.index > 1 )
+							{
+								e->tree.cursor.index--;
+								e->tree.cursor.y_index--;
+								print_cursor( &e->tree.cursor, e->mode );
+							}
+						};break;
+						case 'B':
+						{
+							if( e->tree.cursor.index < e->tree.lines.count - 1)
+							{
+								e->tree.cursor.index++;
+								e->tree.cursor.y_index++;
+								print_cursor( &e->tree.cursor, e->mode );
+							}
+						}break;
+					}
+				}
+			}break;
+		#endif
+		case CTRL_KEY( 'l' ):
+		{
+			e->mode = NORMAL;
+			print_mode( &e->window, e->mode, e->debug_message );
+			print_cursor( &e->cursor, e->mode );
+		}break;
+		case 'k': 
+		{
+			if( e->tree.cursor.index > 1 )
+			{
+				e->tree.cursor.index--;
+				e->tree.cursor.y_index--;
+				print_cursor( &e->tree.cursor, e->mode );
+			}
+		}break;
+		case 'j':
+		{					
+			if( e->tree.cursor.index < e->tree.lines.count - 1 )
+			{
+				e->tree.cursor.index++;
+				e->tree.cursor.y_index++;
+				print_cursor( &e->tree.cursor, e->mode );
+			}
+		}break;
+	}
+	return;
+}
+
 
 void events( Editor * e )
 {
@@ -569,6 +675,10 @@ void events( Editor * e )
 		case INSERT:
 		{
 			events_insert( e );
+		}break;
+		case FLTREE:
+		{
+			events_file_tree( e );
 		}break;
 	}
 	if( get_window_size( &e->window ) )
