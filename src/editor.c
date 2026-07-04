@@ -40,7 +40,6 @@ void init( Editor * e )
 		strcpy( e->debug_message, ": new buffer created" );
 
 
-
 	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
 	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
@@ -578,6 +577,27 @@ void events_normal( Editor * e )
 }
 
 
+void free_undo_redo_stacks( Editor * e )
+{
+	for( int i = 0; i < e->undo_stack->count; i++ )
+	{
+		if( e->undo_stack->items[i] != NULL )
+			free_change( e->undo_stack->items[i] );
+	}
+	free( e->undo_stack->items );
+	free( e->undo_stack );
+	
+	for( int i = 0; i < e->redo_stack->count; i++ )
+	{
+		if( e->redo_stack->items[i] != NULL )
+			free_change( e->redo_stack->items[i] );
+	}
+	free( e->redo_stack->items );
+	free( e->redo_stack );
+	
+//	free( e->line_buff->contents );
+//	free( e->line_buff );
+}
 
 void events_file_tree( Editor * e ) 
 {
@@ -669,14 +689,24 @@ void events_file_tree( Editor * e )
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
-				//save_file( e->file_name, &e->lines );
 				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
 				{
+					e->mode = NORMAL;
+					save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
+					free_file( &e->lines );
+					load_file( &e->lines, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 
+					strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
+					init_cursor( &e->cursor );
+					update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
+					free_undo_redo_stacks( e );
+					init_undo_redo_stacks( e );
+					update( e );
+					index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+					render( e );
 				}
 			}
 		}break;
-
 	}
 	return;
 }
@@ -710,6 +740,7 @@ void events( Editor * e )
 
 void quit( Editor * e )
 {
+	// free files
 	Line_data * prev = NULL;
 	Line_data * temp = e->lines.head;
 	for( int i =0; i< e->lines.count; i++ )
@@ -725,7 +756,8 @@ void quit( Editor * e )
 	//clear screen!
 	write( STDOUT_FILENO, "\x1b[2J", 4 );
 	write( STDOUT_FILENO, "\x1b[H", 3 );
-
+	free_undo_redo_stacks( e );
+/*
 	for( int i = 0; i < e->undo_stack->count; i++ )
 	{
 		if( e->undo_stack->items[i] != NULL )
@@ -741,7 +773,7 @@ void quit( Editor * e )
 	}
 	free( e->redo_stack->items );
 	free( e->redo_stack );
-	
+*/	
 	free( e->line_buff->contents );
 	free( e->line_buff );
 	disable_raw_mode( &e->window );

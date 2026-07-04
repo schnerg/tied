@@ -67,7 +67,6 @@ void init_line( Line_data * temp )
 
 void resize_list( Lines_data * lines )
 {
-	
 	if( lines->list_of_lines == NULL )
 	{
 		lines->copacity = 10;
@@ -75,8 +74,8 @@ void resize_list( Lines_data * lines )
 		if(lines->list_of_lines == NULL ) die( "resize_list(): failed to allocate memory for list_of_lines." );
 		return;
 	}
-	
-	if( lines->count >= lines->copacity -1 )
+	//if( lines->count >= lines->copacity -1 )
+	while( lines->count >= lines->copacity -1 )
 	{
 		lines->copacity *= 2;
 		lines->list_of_lines = realloc( lines->list_of_lines, lines->copacity * sizeof( Line_data * ) );

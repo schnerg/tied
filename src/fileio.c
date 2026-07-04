@@ -63,6 +63,22 @@ retry:
 }
 
 
+void free_file( Lines_data * lines)
+{
+	Line_data * prev = NULL;
+	Line_data * temp = lines->head;
+	for( int i =0; i< lines->count; i++ )
+	{
+		prev = temp;
+		temp = temp->next;
+		free( prev->data );
+		free( prev );
+	}
+	lines->count = 0;
+	return;
+}
+
+
 int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * window, char * debug_message )
 {
 	if( file_name[0] == '\0' )
