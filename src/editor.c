@@ -691,8 +691,8 @@ void events_file_tree( Editor * e )
 			{
 				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
 				{
-					e->mode = NORMAL;
-					save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
+					if( e->saved == false )
+						save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
 					free_file( &e->lines );
 					load_file( &e->lines, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 
@@ -703,6 +703,7 @@ void events_file_tree( Editor * e )
 					init_undo_redo_stacks( e );
 					update( e );
 					index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+					init_editor_settings( e );
 					render( e );
 				}
 			}

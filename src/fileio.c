@@ -138,7 +138,7 @@ int load_file( Lines_data * lines, char * file_name )
 	register unsigned int i = 0;
 	while( ( c = fgetc ( fp ) ) != EOF )
 	{
-		if(c=='\n')
+		if( c == '\n' )
 		{
 			update_line( temp );
 			prev = temp;
@@ -148,14 +148,18 @@ int load_file( Lines_data * lines, char * file_name )
 			temp = temp->next;
 			temp->prev = prev;
 			lines->list_of_lines[lines->count -1] = temp;
-			i=0;
+			i = 0;
 			continue;
 		}
 		if( temp->count == temp->copacity -1 )
 			realloc_data( temp );
-		temp->data[i] = c;
-		temp->count++;
-		i++;
+
+		if( isprint( c ) || c == '\t' )
+		{
+			temp->data[i] = c;
+			temp->count++;
+			i++;
+		}
 	}
 	lines->count--;
 	if( lines->count == 0 )
