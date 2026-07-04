@@ -29,6 +29,7 @@
 typedef struct
 {
 	File_tree tree;
+	
 	//undo_redo_stuffs
 	Buff * line_buff;
 	py_list_t * undo_stack;
@@ -40,7 +41,10 @@ typedef struct
 	
 	Cursor cursor;
 //line stuff
-	Lines_data lines;
+	Lines_data lines;	
+
+	Files files;
+
 	int tabs;
 	int tabs_space;
 	int line_nums;

@@ -28,6 +28,7 @@ typedef struct
 	int copacity;
 }Lines_data;
 
+
 void update_line( Line_data * line );
 void realloc_data( Line_data * temp );
 void update_list_of_lines( Lines_data * lines );

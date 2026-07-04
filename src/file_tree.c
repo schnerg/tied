@@ -9,7 +9,6 @@ void expand_tree_at_point_of_cursor()
 
 void sort_file_tree( File_tree * tree )
 {
-
 	// sort alphabetically
 	Line_data * temp = NULL;
 	bool sorted = false;
@@ -44,10 +43,7 @@ void sort_file_tree( File_tree * tree )
 			}
 		}
 	}
-
-
 /*
-
 	// sort by alphabetically, again :(
 	while( !sorted )
 	{
@@ -146,7 +142,7 @@ void init_file_tree( File_tree * tree )
 }
 
 
-void toggle_file_tree( )
+void toggle_file_tree()
 {
 	file_tree_toggle = ( file_tree_toggle == true )?false:true;
 	return;

@@ -33,8 +33,14 @@ void init( Editor * e )
 	strcpy( e->debug_message, "" );
 	e->done = false;
 	e->tabs = 0;
-	if( read_file( &e->lines, e->file_name ) )
+
+
+
+	if( load_file( &e->lines, e->file_name ) )
 		strcpy( e->debug_message, ": new buffer created" );
+
+
+
 	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
 	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
@@ -388,7 +394,7 @@ void events_insert( Editor * e )
 	#endif
 	switch( c )
 	{
-		case 27: // escape not working for some reason!
+		case 27: 
 		{		
 			#ifdef _WIN32	
 				e->mode = NORMAL;
@@ -524,12 +530,14 @@ void events_normal( Editor * e )
 
 		case CTRL_KEY( 's' ):
 		{
-				write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-				save_file( e->file_name, &e->lines );
+			//write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+			if( save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message ) == 0)
+			{
 				strcpy( e->debug_message, ": file saved" );
 				e->saved = true;
-				print_mode( &e->window, e->mode, e->debug_message );
-				print_cursor( &e->cursor, e->mode );
+			}
+			print_mode( &e->window, e->mode, e->debug_message );
+			print_cursor( &e->cursor, e->mode );
 		}break;
 		case CTRL_KEY( 'q' ):
 		{
@@ -582,18 +590,16 @@ void events_file_tree( Editor * e )
 			{
 				case 38:
 				{
-					if( e->tree.cursor.index > 1 )
+					if( e->tree.cursor.y_index > 1 )
 					{
-						e->tree.cursor.index--;
 						e->tree.cursor.y_index--;
 						print_cursor( &e->tree.cursor, e->mode );
 					}
 				}break;
 				case 40:
 				{
-					if( e->tree.cursor.index < e->tree.lines.count - 1 )
+					if( e->tree.cursor.y_index < e->tree.lines.count - 1 )
 					{
-						e->tree.cursor.index++;
 						e->tree.cursor.y_index++;
 						print_cursor( &e->tree.cursor, e->mode );
 					}
@@ -615,18 +621,16 @@ void events_file_tree( Editor * e )
 					{
 						case 'A':
 						{
-							if( e->tree.cursor.index > 1 )
+							if( e->tree.cursor.y_index > 1 )
 							{
-								e->tree.cursor.index--;
 								e->tree.cursor.y_index--;
 								print_cursor( &e->tree.cursor, e->mode );
 							}
 						};break;
 						case 'B':
 						{
-							if( e->tree.cursor.index < e->tree.lines.count - 1)
+							if( e->tree.cursor.y_index < e->tree.lines.count - 1)
 							{
-								e->tree.cursor.index++;
 								e->tree.cursor.y_index++;
 								print_cursor( &e->tree.cursor, e->mode );
 							}
@@ -643,22 +647,36 @@ void events_file_tree( Editor * e )
 		}break;
 		case 'k': 
 		{
-			if( e->tree.cursor.index > 1 )
+			if( e->tree.cursor.y_index > 1 )
 			{
-				e->tree.cursor.index--;
 				e->tree.cursor.y_index--;
 				print_cursor( &e->tree.cursor, e->mode );
 			}
 		}break;
 		case 'j':
 		{					
-			if( e->tree.cursor.index < e->tree.lines.count - 1 )
+			if( e->tree.cursor.y_index < e->tree.lines.count - 1 )
 			{
-				e->tree.cursor.index++;
 				e->tree.cursor.y_index++;
 				print_cursor( &e->tree.cursor, e->mode );
 			}
 		}break;
+		case 13:// enter key
+		{
+			if( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
+			{
+
+			}
+			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
+			{
+				//save_file( e->file_name, &e->lines );
+				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
+				{
+
+				}
+			}
+		}break;
+
 	}
 	return;
 }

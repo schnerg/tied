@@ -3,7 +3,7 @@
 
 void error_message( char * buffer, char * message )
 {
-	snprintf( buffer, 1000, "( %s )\n--------------------\n       o\n       o\n        o  @..@\n          (----)\n         ( )--( )\n          o0..0o\n", message );
+	snprintf( buffer, 1000, "( %s )\n\r--------------------\n\r       o\n\r       o\n\r        o  @..@\n\r          (----)\n\r         ( )--( )\n\r          o0..0o\n\r", message );
 	return;
 }
 
