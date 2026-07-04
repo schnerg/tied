@@ -126,12 +126,21 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 		if( y < lines->count - c->y_offset )
 		{		
 
-
-
 //	 filetree
 			if( file_tree_toggle == true )
 			{
-				if( y < tree->lines.count )
+				if( y == 0 )
+					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
+					{
+						if( i < strlen(tree->working_directory) )	
+							append_to_buffer( buffer, &tree->working_directory[i], 1 );
+						else
+							append_to_buffer( buffer, " ", 1 );
+					}
+				else if( y < tree->lines.count)
+				{
+					if( tree->lines.list_of_lines[y]->is_dir )
+						append_to_buffer( buffer, "\033[0;34m", 7 );
 					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
 					{
 						if( i < tree->lines.list_of_lines[y]->count )	
@@ -139,6 +148,9 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 						else
 							append_to_buffer( buffer, " ", 1 );
 					}
+					if( tree->lines.list_of_lines[y]->is_dir )
+						append_to_buffer( buffer, "\033[0m", 4 );
+				}
 				else
 					for( int i = 0; i < FILE_TREE_WIDTH - 1; i++ )
 						append_to_buffer( buffer, " ", 1 );
