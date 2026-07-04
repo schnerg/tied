@@ -9,7 +9,7 @@ char getch( Window * window )
 	#ifdef _WIN32	
 		DWORD numread;
 		INPUT_RECORD input_record_buffer[2];
-		ReadConsoleInput( e->window.hstdin, input_record_buffer, 2, &numread );
+		ReadConsoleInput( window->hstdin, input_record_buffer, 2, &numread );
 		for( int i = 0; i < numread; i++ )
 			if( input_record_buffer[i].Event.KeyEvent.bKeyDown )
 			{

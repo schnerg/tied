@@ -4,7 +4,6 @@
 void sort_file_tree( File_tree * tree )
 {
 	// sort alphabetically
-
 	Line_data * temp = NULL;
 	bool sorted = false;
 	while( !sorted )
