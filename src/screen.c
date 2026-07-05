@@ -120,16 +120,14 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
+	Line_data * file_tree_temp = tree->lines.list_of_lines[tree->cursor.y_offset];
 	char buff[window->cols + 1];
-
-	// file tree stuffs
-	
-
 
 	for( int y = 0; y < window->rows - 1; y++ )
 	{	
 		if( file_tree_toggle == true )
-		{
+		{	
+			// file tree stuffs
 			// print directory
 				if( y == 0 )
 					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
@@ -140,31 +138,27 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 							append_to_buffer( buffer, " ", 1 );
 					}
 				// print rest of file tree	
-				else if( y < tree->lines.expanded_count)
+				else if( y < tree->lines.expanded_count )
 				{
 					// if directory color text;
-					if( tree->lines.list_of_lines[y]->is_dir )
+					if( tree->lines.list_of_lines[y + tree->cursor.y_offset]->is_dir )
 						append_to_buffer( buffer, "\033[0;34m", 7 );
+					
+					// print padding for file names!
+					for( i32 i = 0; i < ( tree->lines.list_of_lines[y + tree->cursor.y_offset]->dcopacity * 2 ); i++ )
+						append_to_buffer( buffer, " ", 1 );
 
-
-					/*
-					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
+					// print file names!
+					for( int i = 0; i < FILE_TREE_WIDTH -1 - ( tree->lines.list_of_lines[y + tree->cursor.y_offset]->dcopacity * 2 ) ; i++ )
 					{
-						if( i < strlen(tree->lines.list_of_lines[y]->to_display) )
-							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->to_display[i], 1 );
+						if( i < tree->lines.list_of_lines[y + tree->cursor.y_offset]->count )
+							append_to_buffer( buffer, &tree->lines.list_of_lines[y + tree->cursor.y_offset]->data[i], 1 );
 						else
 							append_to_buffer( buffer, " ", 1 );
 					}
-*/
-					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
-					{
-						if( i < tree->lines.list_of_lines[y]->count )
-							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->data[i], 1 );
-						else
-							append_to_buffer( buffer, " ", 1 );
-					}
+					
 					// if directory return text color to normal
-					if( tree->lines.list_of_lines[y]->is_dir )
+					if( tree->lines.list_of_lines[y + tree->cursor.y_offset]->is_dir )
 						append_to_buffer( buffer, "\033[0m", 4 );
 
 				}

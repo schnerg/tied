@@ -556,10 +556,9 @@ void events_normal( Editor * e )
 		}break;
 		case CTRL_KEY( 'h' ):
 		{
-			if( toggle_file_tree )
+			if( file_tree_toggle )
 			{
 				e->mode = FLTREE;
-			//update_cursor( &e->cursor, e->line_buff );
 				print_mode( &e->window, e->mode, e->debug_message );
 				print_cursor( &e->tree.cursor, e->mode );
 			}
@@ -594,10 +593,8 @@ void free_undo_redo_stacks( Editor * e )
 	}
 	free( e->redo_stack->items );
 	free( e->redo_stack );
-	
-//	free( e->line_buff->contents );
-//	free( e->line_buff );
 }
+
 
 void events_file_tree( Editor * e ) 
 {
@@ -618,7 +615,7 @@ void events_file_tree( Editor * e )
 				}break;
 				case 40:
 				{
-					if( e->tree.cursor.y_index < e->tree.lines.count - 1 )
+					if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1 )
 					{
 						e->tree.cursor.y_index++;
 						print_cursor( &e->tree.cursor, e->mode );
@@ -649,7 +646,7 @@ void events_file_tree( Editor * e )
 						};break;
 						case 'B':
 						{
-							if( e->tree.cursor.y_index < e->tree.lines.count - 1)
+							if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1)
 							{
 								e->tree.cursor.y_index++;
 								print_cursor( &e->tree.cursor, e->mode );
@@ -670,14 +667,22 @@ void events_file_tree( Editor * e )
 			if( e->tree.cursor.y_index > 1 )
 			{
 				e->tree.cursor.y_index--;
+				
+				if( e->tree.cursor.y_offset > 0 && e->tree.cursor.y_index - e->tree.cursor.y_offset < 1 )
+				e->tree.cursor.y_offset--;
+
+				render( e );
 				print_cursor( &e->tree.cursor, e->mode );
 			}
 		}break;
 		case 'j':
 		{					
-			if( e->tree.cursor.y_index < e->tree.lines.count - 1 )
+			if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1 )
 			{
 				e->tree.cursor.y_index++;
+				if( ( e->tree.cursor.y_index - e->tree.cursor.y_offset ) == e->window.rows - 1 )
+					e->tree.cursor.y_offset++;
+				render( e );
 				print_cursor( &e->tree.cursor, e->mode );
 			}
 		}break;
@@ -687,6 +692,13 @@ void events_file_tree( Editor * e )
 			{
 				if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded )
 					expand_tree_at_point_of_cursor( &e->tree );
+				else
+				{
+					e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded = false;
+					update_file_tree_items( &e->tree, &e->tree.lines );
+				}
+				render( e );
+				print_cursor( &e->tree.cursor, e->mode );
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
@@ -695,10 +707,13 @@ void events_file_tree( Editor * e )
 					char buff[1024];
 					if( strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) < 1024 )
 					{
+						e->mode = NORMAL;
 						snprintf( buff, 1024, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
+						
 						if( e->saved == false )
 							save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
 						free_file( &e->lines );
+						
 						load_file( &e->lines, buff );
 						strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 						init_cursor( &e->cursor );

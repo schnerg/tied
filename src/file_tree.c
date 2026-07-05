@@ -30,19 +30,27 @@ int get_new_size( Line_data * head, i32 count )
 }
 
 
-int _update_file_tree_items( File_tree * tree, Line_data * head, i32 index, i32 count )
+int _update_file_tree_items( File_tree * tree, Line_data * head, i32 index, i32 count, i32 iterations )
 {
+	iterations++;
 	Line_data * temp = NULL;
 	if( index == 0 )
+	{
 		temp = head->next;
+		tree->lines.list_of_lines[index] = temp;
+		index++;
+	}
 	else
 		temp = head->head;
 	for( i32 i = 0; i < count; i++ )
 	{
 		tree->lines.list_of_lines[index] = temp;
+		temp->dcopacity = iterations;
 		index++;
 		if( temp->is_dir && temp->expanded )
-			index = _update_file_tree_items( tree, temp, index, temp->dcount );
+		{
+			index = _update_file_tree_items( tree, temp, index, temp->dcount, iterations);
+		}
 		temp = temp->next;
 	}
 	return index;
@@ -54,7 +62,7 @@ void update_file_tree_items( File_tree * tree, Lines_data * lines )
 	i32 new_count = get_new_size( lines->head->next, lines->count - 1 );
 	lines->expanded_count = lines->count + new_count;
 	resize_list_expanded( lines );
-	_update_file_tree_items( tree, lines->head, 0, lines->count);
+	_update_file_tree_items( tree, lines->head, 0, lines->count, -1 );
 	return;	
 }
 
@@ -64,12 +72,13 @@ void read_directory( File_tree * tree )
 	DIR * directory;
 	struct dirent * entry;
 	struct stat file_stat;
-	char buff[1024];
-	snprintf( buff, 1024, "./%s", tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	char buff[1024];	
+	snprintf( buff, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 	directory = opendir( buff );
+	
+	//if( strlen( tree->working_directory ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data )  < 1024 - 1 ) 
+	//snprintf( buff, 1024, "%s/%s", tree->working_directory, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 
-	if( strlen( tree->working_directory ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data )  < 1024 - 1 ) 
-	snprintf( buff, 1024, "%s/%s", tree->working_directory, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 	if( directory == NULL )
 	{
 		die( "unable to read directory" );
@@ -78,7 +87,7 @@ void read_directory( File_tree * tree )
 
 	tree->lines.list_of_lines[tree->cursor.y_index]->head = calloc( 1, sizeof( Line_data ) );
 	tree->lines.list_of_lines[tree->cursor.y_index]->head->data = calloc( 50, sizeof( char ) );	
-	tree->lines.list_of_lines[tree->cursor.y_index]->head->to_display = calloc( 50, sizeof( char ) );	
+	tree->lines.list_of_lines[tree->cursor.y_index]->head->to_display = calloc( 1024, sizeof( char ) );	
 
 	Line_data * temp = tree->lines.list_of_lines[tree->cursor.y_index]->head;
 	Line_data * prev = tree->lines.list_of_lines[tree->cursor.y_index];
@@ -96,12 +105,15 @@ void read_directory( File_tree * tree )
 			temp->data[i] = '\0';
 		else
 			temp->data[i+1] = '\0';
-		// saving path to file so can use later
-		strcpy( temp->to_display, buff );
 		// checking if file is directory
-		stat( entry->d_name, &file_stat );
+		char file_name_and_path[1024];
+		snprintf( file_name_and_path, 1024, "%s/%s", buff, entry->d_name );
+		stat( file_name_and_path, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;	
+		
+		// saving path to file so can use later
+		strcpy( temp->to_display, buff );
 		temp->count = i;
 		// incrementing
 		prev = temp;	
@@ -119,11 +131,9 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 	if( strcmp( tree->lines.list_of_lines[tree->cursor.y_index]->data, ".." ) != 0 )
 	{
 		if( tree->lines.list_of_lines[tree->cursor.y_index]->dcount == 0 )
-		{
 			read_directory( tree );
-			tree->lines.list_of_lines[tree->cursor.y_index]->expanded = true;
-			update_file_tree_items( tree, &tree->lines );
-		}
+		tree->lines.list_of_lines[tree->cursor.y_index]->expanded = true;
+		update_file_tree_items( tree, &tree->lines );
 	}
 	else if( strcmp( tree->working_directory, "/") != 0 )
 	{
