@@ -685,26 +685,31 @@ void events_file_tree( Editor * e )
 		{
 			if( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
-
+				if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded )
+					expand_tree_at_point_of_cursor( &e->tree );
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
 				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
 				{
-					if( e->saved == false )
-						save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
-					free_file( &e->lines );
-					load_file( &e->lines, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
-
-					strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
-					init_cursor( &e->cursor );
-					update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
-					free_undo_redo_stacks( e );
-					init_undo_redo_stacks( e );
-					update( e );
-					index_to_rx( &e->cursor, e->line_buff, e->line_nums );
-					init_editor_settings( e );
-					render( e );
+					char buff[1024];
+					if( strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) < 1024 )
+					{
+						snprintf( buff, 1024, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
+						if( e->saved == false )
+							save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
+						free_file( &e->lines );
+						load_file( &e->lines, buff );
+						strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
+						init_cursor( &e->cursor );
+						update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
+						free_undo_redo_stacks( e );
+						init_undo_redo_stacks( e );
+						update( e );
+						index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+						init_editor_settings( e );
+						render( e );
+					}
 				}
 			}
 		}break;

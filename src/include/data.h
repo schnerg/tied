@@ -11,9 +11,11 @@ typedef struct Line_data
 	char * data;
 	char * to_display;
 	i32 dcount;
+	i32 dcopacity;
 	i32 copacity;
 	i32 count;
 	bool is_dir;
+	bool expanded;
 	struct Line_data * head;
 	struct Line_data * next;
 	struct Line_data * prev;
@@ -24,8 +26,9 @@ typedef struct
 {
 	Line_data * head;
 	Line_data ** list_of_lines;
-	int count;
-	int copacity;
+	i32 expanded_count;
+	i32 count;
+	i32 copacity;
 }Lines_data;
 
 

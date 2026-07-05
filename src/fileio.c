@@ -10,7 +10,6 @@ bool does_file_exist( File_tree * tree, char * file_name )
 }
 
 
-
 int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window, char * debug_message )
 {
 	//write prompt

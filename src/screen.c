@@ -121,11 +121,16 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
 	char buff[window->cols + 1];
+
+	// file tree stuffs
+	
+
+
 	for( int y = 0; y < window->rows - 1; y++ )
 	{	
-
 		if( file_tree_toggle == true )
 		{
+			// print directory
 				if( y == 0 )
 					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
 					{
@@ -134,63 +139,46 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 						else
 							append_to_buffer( buffer, " ", 1 );
 					}
-				else if( y < tree->lines.count)
+				// print rest of file tree	
+				else if( y < tree->lines.expanded_count)
 				{
+					// if directory color text;
 					if( tree->lines.list_of_lines[y]->is_dir )
 						append_to_buffer( buffer, "\033[0;34m", 7 );
+
+
+					/*
 					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
 					{
-						if( i < tree->lines.list_of_lines[y]->count )	
+						if( i < strlen(tree->lines.list_of_lines[y]->to_display) )
+							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->to_display[i], 1 );
+						else
+							append_to_buffer( buffer, " ", 1 );
+					}
+*/
+					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
+					{
+						if( i < tree->lines.list_of_lines[y]->count )
 							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->data[i], 1 );
 						else
 							append_to_buffer( buffer, " ", 1 );
 					}
+					// if directory return text color to normal
 					if( tree->lines.list_of_lines[y]->is_dir )
 						append_to_buffer( buffer, "\033[0m", 4 );
+
 				}
+				// print empty file tree section
 				else
 					for( int i = 0; i < FILE_TREE_WIDTH - 1; i++ )
 						append_to_buffer( buffer, " ", 1 );
 				append_to_buffer( buffer, "|", 1 );
 			}
+
+
 
 		if( y < lines->count - c->y_offset )
 		{		
-
-/*
-			//	 filetree
-			if( file_tree_toggle == true )
-			{
-				if( y == 0 )
-					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
-					{
-						if( i < strlen(tree->working_directory) )	
-							append_to_buffer( buffer, &tree->working_directory[i], 1 );
-						else
-							append_to_buffer( buffer, " ", 1 );
-					}
-				else if( y < tree->lines.count)
-				{
-					if( tree->lines.list_of_lines[y]->is_dir )
-						append_to_buffer( buffer, "\033[0;34m", 7 );
-					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
-					{
-						if( i < tree->lines.list_of_lines[y]->count )	
-							append_to_buffer( buffer, &tree->lines.list_of_lines[y]->data[i], 1 );
-						else
-							append_to_buffer( buffer, " ", 1 );
-					}
-					if( tree->lines.list_of_lines[y]->is_dir )
-						append_to_buffer( buffer, "\033[0m", 4 );
-				}
-				else
-					for( int i = 0; i < FILE_TREE_WIDTH - 1; i++ )
-						append_to_buffer( buffer, " ", 1 );
-				append_to_buffer( buffer, "|", 1 );
-			}
-*/		
-
-
 			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
 			//append line num;
 			char line_num[40];
