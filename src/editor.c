@@ -730,7 +730,9 @@ void events_file_tree( Editor * e )
 		}break;
 		case CTRL_KEY( 'c' ):
 		{
-			//change_
+			change_dir_at_point_of_cursor( &e->tree );
+			render( e );
+			print_cursor( &e->tree.cursor, e->mode );
 		}break;
 
 	}

@@ -4,8 +4,6 @@ NO AI WAS USED IN THE MAKING OF THIS EDITOR! :D
 
 This text editor is rubbish. 
 
-It only kinda works.
-
 This editor doesn't work with unicode.
 
 it has windows support! :D
@@ -33,8 +31,17 @@ Normal Mode:
 - ctrl + s : save 
 - ctrl + x : quit without saving
 
+- ctrl + f : open file tree
+- ctrl + h : switch to file tree mode
+
 Insert Mode:
 - esc = switch to normal mode
+
+Filetree mode:
+- ctrl + l : switch to normal mode
+- ctrl + c : change directory to directory at cursor 
+- Enter    : switch to file or expand directory
+ 
 
 ##Contributing
 

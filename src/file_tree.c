@@ -168,6 +168,16 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 }
 
 
+void change_dir_at_point_of_cursor( File_tree * tree )
+{
+	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
+		if( ( strlen(  tree->working_directory ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) )  < 1024 - 1 )
+			snprintf( tree->working_directory, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );	
+	reset_file_tree( tree );
+	return;
+}
+
+
 void swap( Line_data * a, Line_data * b )
 {	
 	i32 dcount;

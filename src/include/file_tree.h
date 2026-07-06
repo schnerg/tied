@@ -31,6 +31,7 @@ typedef struct
 }File_tree;
 
 
+void change_dir_at_point_of_cursor( File_tree * tree );
 void adjust_cursor_offset( File_tree * tree, i32 rows );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void toggle_file_tree();
