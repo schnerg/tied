@@ -254,8 +254,6 @@ void read_working_dir( File_tree * tree )
 		temp = temp->next;
 	}
 	tree->lines.expanded_count = tree->lines.count;
-	printf( "%i\n\r", tree->lines.expanded_count );
-	system("sleep 1");
 	update_list_of_lines( &tree->lines );
 	closedir( directory );	
 	return; 
