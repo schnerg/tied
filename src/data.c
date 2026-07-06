@@ -59,7 +59,7 @@ void init_line( Line_data * temp )
 
 	temp->next->is_dir = false;
 	temp->next->expanded = false;
-
+	
 	temp->head = NULL;
 	temp->next->to_display = NULL;
 	temp->next->next = NULL;

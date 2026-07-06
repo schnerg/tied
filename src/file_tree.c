@@ -3,6 +3,7 @@
 
 void reset_file_tree( File_tree * tree );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
+void sort_directory( Line_data * head, bool is_root );
 
 
 void resize_list_expanded( Lines_data * lines )
@@ -52,9 +53,7 @@ int _update_file_tree_items( File_tree * tree, Line_data * head, i32 index, i32 
 		temp->dcopacity = iterations;
 		index++;
 		if( temp->is_dir && temp->expanded )
-		{
 			index = _update_file_tree_items( tree, temp, index, temp->dcount, iterations);
-		}
 		temp = temp->next;
 	}
 	return index;
@@ -63,8 +62,8 @@ int _update_file_tree_items( File_tree * tree, Line_data * head, i32 index, i32 
 
 void update_file_tree_items( File_tree * tree, Lines_data * lines )
 {
-	i32 new_count = get_new_size( lines->head->next, lines->count - 1 );
-	lines->expanded_count = lines->count + new_count;
+	i32 new_count = get_new_size( lines->head->next, lines->count );
+	lines->expanded_count = lines->count + new_count + 1;
 	resize_list_expanded( lines );
 	_update_file_tree_items( tree, lines->head, 0, lines->count, -1 );
 	return;	
@@ -79,10 +78,6 @@ void read_directory( File_tree * tree )
 	char buff[1024];	
 	snprintf( buff, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 	directory = opendir( buff );
-	
-	//if( strlen( tree->working_directory ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data )  < 1024 - 1 ) 
-	//snprintf( buff, 1024, "%s/%s", tree->working_directory, tree->lines.list_of_lines[tree->cursor.y_index]->data );
-
 	if( directory == NULL )
 	{
 		die( "unable to read directory" );
@@ -95,7 +90,8 @@ void read_directory( File_tree * tree )
 
 	Line_data * temp = tree->lines.list_of_lines[tree->cursor.y_index]->head;
 	Line_data * prev = tree->lines.list_of_lines[tree->cursor.y_index];
-	tree->lines.list_of_lines[tree->cursor.y_index]->dcount = 0 ;
+	Line_data * to_be_delete = NULL;
+	tree->lines.list_of_lines[tree->cursor.y_index]->dcount = 0;
 	i32 i;
 	while( ( entry = readdir( directory ) ) != NULL )
 	{ 
@@ -105,8 +101,7 @@ void read_directory( File_tree * tree )
 		temp->prev = prev;	
 		for( i = 0; i < 50 && i < strlen(entry->d_name); i++ )
 			temp->data[i] = entry->d_name[i];
-		if( i >= 50 )
-			temp->data[i] = '\0';
+		temp->data[i] = '\0';
 		// checking if file is directory
 		char file_name_and_path[1024];
 		snprintf( file_name_and_path, 1024, "%s/%s", buff, entry->d_name );
@@ -121,9 +116,14 @@ void read_directory( File_tree * tree )
 		prev = temp;	
 		init_line( temp );
 		temp->next->to_display = calloc( 1024, sizeof( char ) );
+		to_be_delete = temp;
 		temp = temp->next;
 	}
-	closedir( directory );	
+	closedir( directory );
+	free( to_be_delete->next->data );
+	free( to_be_delete->next->to_display );
+	free( to_be_delete->next );
+	to_be_delete->next = NULL;
 	return; 
 }
 
@@ -133,7 +133,10 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 	if( strcmp( tree->lines.list_of_lines[tree->cursor.y_index]->data, ".." ) != 0 )
 	{
 		if( tree->lines.list_of_lines[tree->cursor.y_index]->dcount == 0 )
+		{
 			read_directory( tree );
+			sort_directory( tree->lines.list_of_lines[tree->cursor.y_index], false );
+		}
 		tree->lines.list_of_lines[tree->cursor.y_index]->expanded = true;
 		update_file_tree_items( tree, &tree->lines );
 	}
@@ -153,60 +156,88 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 }
 
 
-void sort_file_tree( File_tree * tree )
-{
-	// sort alphabetically
-	Line_data * temp = NULL;
-	bool sorted = false;
-	while( !sorted )
-	{
-		sorted = true;
-		for( i32 i = 1; i < tree->lines.count - 1 ; i++ )
-		{
-			if( strcmp( tree->lines.list_of_lines[i]->data, tree->lines.list_of_lines[i+1]->data ) < 0 )
-			{
-				sorted = false;
-				temp = tree->lines.list_of_lines[i];
-				tree->lines.list_of_lines[i] = tree->lines.list_of_lines[i+1];
-				tree->lines.list_of_lines[i+1] = temp;
-				break;
-			}
-		}
-	}
 
-	// sort by file first
-	for( i32 i = 1; i < tree->lines.count; i++ )
+// check if primary condition is true
+// then check secondary condition
+
+
+void swap( Line_data * a, Line_data * b )
+{	
+	i32 dcount;
+	i32 dcopacity;
+	i32 count;
+	bool is_dir;
+	bool expanded;	
+	char temp[50];
+
+	strcpy( temp, a->data );
+	strcpy( a->data, b->data );
+	strcpy( b->data, temp );
+
+	dcopacity = a->dcopacity;
+	a->dcopacity = b->dcopacity;
+	b->dcopacity = dcopacity;
+
+	dcount = a->dcount;
+	a->dcount = b->dcount;
+	b->dcount = dcount;
+	
+	count = a->count;
+	a->count = b->count;
+	b->count = count;
+
+	is_dir = a->is_dir;
+	a->is_dir = b->is_dir;
+	b->is_dir = is_dir;
+
+	expanded = a->expanded;
+	a->expanded = b->expanded;
+	b->expanded = expanded;
+
+	return;
+}
+
+
+
+bool compare( Line_data * a, Line_data * b )
+{
+	if( a->is_dir > b->is_dir )
+		return true;
+	else if( a->is_dir < b->is_dir )
+		return false;
+	if( strcmp( a->data, b->data ) < 0 )
+		return true;
+	return false;
+}
+
+
+
+void sort_directory( Line_data * head, bool root )
+{
+	Line_data * index = NULL;
+	Line_data * current = NULL;
+	Line_data * last;
+	bool done = false;	
+	if( root )
+		current = head->next;
+	else if( !root )
+		current = head->head;
+	while( !done )
 	{
-		if( tree->lines.list_of_lines[i]->is_dir )
-			continue;
-		for( i32 j = i + 1; j < tree->lines.count; j++ )
+		done = true;
+		index = current;
+		last = current; 
+		while( index != NULL )
 		{
-			if( tree->lines.list_of_lines[j]->is_dir )
+			if( compare( index, last ) )
 			{
-				temp = tree->lines.list_of_lines[i];
-				tree->lines.list_of_lines[i] = tree->lines.list_of_lines[j];
-				tree->lines.list_of_lines[j] = temp;
+				swap( last, index  );
+				done = false;
 			}
+			last = index;
+			index = index->next;
 		}
 	}
-/*
-	// sort by alphabetically, again :(
-	while( !sorted )
-	{
-		sorted = true;
-		for( i32 i = 1; i < tree->lines.count - 1 ; i++ )
-		{
-			if( strcmp( tree->lines.list_of_lines[i]->data, tree->lines.list_of_lines[i+1]->data ) > 0 )
-			{
-				sorted = false;
-				temp = tree->lines.list_of_lines[i];
-				tree->lines.list_of_lines[i] = tree->lines.list_of_lines[i+1];
-				tree->lines.list_of_lines[i+1] = temp;
-				break;
-			}
-		}
-	}
-*/
 	return;
 }
 
@@ -225,6 +256,7 @@ void read_working_dir( File_tree * tree )
 	}	
 	Line_data * temp = tree->lines.head->next;
 	Line_data * prev = tree->lines.head;
+	Line_data * to_be_delete = NULL;
 	tree->lines.count = 0;
 	i32 i;
 	while( ( entry = readdir( directory ) ) != NULL )
@@ -251,11 +283,15 @@ void read_working_dir( File_tree * tree )
 		prev = temp;	
 		init_line( temp );
 		temp->next->to_display = calloc( 1024, sizeof( char ) );
+		to_be_delete = temp;
 		temp = temp->next;
 	}
 	tree->lines.expanded_count = tree->lines.count;
-	update_list_of_lines( &tree->lines );
 	closedir( directory );	
+	free( to_be_delete->next->data );
+	free( to_be_delete->next->to_display );
+	free( to_be_delete->next );
+	to_be_delete->next = NULL;
 	return; 
 }
 
@@ -305,6 +341,9 @@ void reset_file_tree( File_tree * tree )
 	init_line( tree->lines.head );
 	tree->lines.head->next->to_display = calloc( 1024, sizeof( char ) );
 	read_working_dir( tree );
+	sort_directory( tree->lines.head, true );
+	//update_list_of_lines( &tree->lines );
+	update_file_tree_items( tree, &tree->lines );
 	return;
 }
 
@@ -322,7 +361,8 @@ void init_file_tree( File_tree * tree )
 	init_line( tree->lines.head );
 	tree->lines.head->next->to_display = calloc( 1024, sizeof( char ) );
 	read_working_dir( tree );
-	//sort_file_tree( tree );
+	sort_directory( tree->lines.head, true );
+	update_file_tree_items( tree, &tree->lines );
 	file_tree_toggle = false;
 	return;
 }

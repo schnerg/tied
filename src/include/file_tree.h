@@ -25,7 +25,7 @@ typedef struct
 	Cursor cursor;
 	char working_directory[1024];
 	Lines_data lines;
-	Line_data * head;
+//	Line_data * head;
 	bool working_directory_changed;
 }File_tree;
 
