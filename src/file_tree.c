@@ -1,6 +1,8 @@
 #include "include/file_tree.h"
 
 
+void reset_file_tree( File_tree * tree );
+
 void resize_list_expanded( Lines_data * lines )
 {
 	while( lines->expanded_count >= lines->copacity -1 )
@@ -103,8 +105,6 @@ void read_directory( File_tree * tree )
 			temp->data[i] = entry->d_name[i];
 		if( i >= 50 )
 			temp->data[i] = '\0';
-		else
-			temp->data[i+1] = '\0';
 		// checking if file is directory
 		char file_name_and_path[1024];
 		snprintf( file_name_and_path, 1024, "%s/%s", buff, entry->d_name );
@@ -138,10 +138,13 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 	else if( strcmp( tree->working_directory, "/") != 0 )
 	{
 		i32 i = strlen( tree->working_directory );
-		while( tree->working_directory[0] != '/' )
+		while( tree->working_directory[i] != '/' )
 			i--;
-		tree->working_directory[i] = '\0';
-		tree->working_directory_changed = true;
+		if( i > 0)
+			tree->working_directory[i] = '\0';
+		else
+			tree->working_directory[i+1] = '\0';
+		reset_file_tree( tree );
 	}
 	return;
 }
@@ -229,33 +232,30 @@ void read_working_dir( File_tree * tree )
 			continue;
 		tree->lines.count++;
 		temp->prev = prev;	
-		for( i = 0; i < 50 && i < strlen(entry->d_name); i++ )
-			temp->data[i] = entry->d_name[i];	
-		
+		for( i = 0; i < 50 && i < strlen( entry->d_name ); i++ )
+			temp->data[i] = entry->d_name[i];		
 		if( i >= 50 )
 			temp->data[i] = '\0';
-		else
-			temp->data[i+1] = '\0';
+		temp->count = i ;
 		
 		// saving path to file so can use later
-		if( strlen( tree->working_directory ) < 1024)
+		if( strlen( tree->working_directory ) < 1024 )
 			strcpy( temp->to_display, tree->working_directory );
-		
-		stat( entry->d_name, &file_stat );
+
+		char buff[1024];
+		snprintf( buff, 1024, "%s/%s", tree->working_directory, temp->data );
+		stat( buff, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;
 		
-		temp->count = i ;
 		prev = temp;	
 		init_line( temp );
 		temp->next->to_display = calloc( 1024, sizeof( char ) );
-
 		temp = temp->next;
 	}
-//	tree->lines.count--;
-//	if( tree->lines.count == 0 )
-//		tree->lines.count++;
 	tree->lines.expanded_count = tree->lines.count;
+	printf( "%i\n\r", tree->lines.expanded_count );
+	system("sleep 1");
 	update_list_of_lines( &tree->lines );
 	closedir( directory );	
 	return; 
@@ -270,31 +270,44 @@ int get_working_dir( File_tree * tree )
 }
 
 
-void free_file_tree( File_tree * tree )	
+void free_file_tree( Line_data * head, i32 count, i32 iteration )	
 {
-	for( int i = 0; i < tree->lines.count; i++ )
+	Line_data * temp = head;
+	if( iteration == 0 )
+		temp = head->next;
+	else
+		temp = head->head;	
+	Line_data * next = temp;
+	for( int i = 0; i < count; i++)
 	{
-
+		temp = next;
+		if( temp->is_dir )
+			free_file_tree( temp, temp->dcount, 1 );
+		next = temp->next;
+		free( temp->data );
+		free( temp->to_display);
+		free( temp );
 	}
 	return;
 }
 
 
+
 void reset_file_tree( File_tree * tree )
 {
-	free_file_tree( tree );
+	free_file_tree( tree->lines.head, tree->lines.count, 0 );
+	free( tree->lines.head );
 	init_cursor( &tree->cursor);
 	tree->cursor.index = 1;
 	tree->cursor.y_index = 1;
 	tree->lines.head = calloc( 1, sizeof( Line_data ) );
 	if( tree->lines.head == NULL ) die( "could not allocate memory for file_tree" );
-	tree->lines.list_of_lines = NULL; 
 	init_line( tree->lines.head );
 	tree->lines.head->next->to_display = calloc( 1024, sizeof( char ) );
 	read_working_dir( tree );
-	//sort_file_tree( tree );
 	return;
 }
+
 
 
 void init_file_tree( File_tree * tree )
@@ -303,7 +316,6 @@ void init_file_tree( File_tree * tree )
 	tree->cursor.index = 1;
 	tree->cursor.y_index = 1;
 	if( get_working_dir( tree ) == 1 ) die( "could not get working directory. :( ");
-	
 	tree->lines.head = calloc( 1, sizeof( Line_data ) );
 	if( tree->lines.head == NULL ) die( "could not allocate memory for file_tree" );
 	tree->lines.list_of_lines = NULL; 

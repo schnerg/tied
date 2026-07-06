@@ -129,14 +129,24 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 		{	
 			// file tree stuffs
 			// print directory
+				
 				if( y == 0 )
+				{
+					int j = strlen( tree->working_directory );
+					int start = 0;
+					while( start < FILE_TREE_WIDTH - 1 && j > 0 )
+					{
+						j--;
+						start++;
+					}
 					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
 					{
 						if( i < strlen(tree->working_directory) )	
-							append_to_buffer( buffer, &tree->working_directory[i], 1 );
+							append_to_buffer( buffer, &tree->working_directory[j + i], 1 );
 						else
 							append_to_buffer( buffer, " ", 1 );
 					}
+				}
 				// print rest of file tree	
 				else if( y < tree->lines.expanded_count )
 				{
@@ -149,7 +159,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 						append_to_buffer( buffer, " ", 1 );
 
 					// print file names!
-					for( int i = 0; i < FILE_TREE_WIDTH -1 - ( tree->lines.list_of_lines[y + tree->cursor.y_offset]->dcopacity * 2 ) ; i++ )
+					for( int i = 0; i < FILE_TREE_WIDTH - 1 - ( tree->lines.list_of_lines[y + tree->cursor.y_offset]->dcopacity * 2 ) ; i++ )
 					{
 						if( i < tree->lines.list_of_lines[y + tree->cursor.y_offset]->count )
 							append_to_buffer( buffer, &tree->lines.list_of_lines[y + tree->cursor.y_offset]->data[i], 1 );
