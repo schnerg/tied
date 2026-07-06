@@ -728,6 +728,11 @@ void events_file_tree( Editor * e )
 				}
 			}
 		}break;
+		case CTRL_KEY( 'c' ):
+		{
+			//change_
+		}break;
+
 	}
 	return;
 }
@@ -753,7 +758,11 @@ void events( Editor * e )
 	if( get_window_size( &e->window ) )
 	{
 		adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
+		if( file_tree_toggle )
+			adjust_cursor_offset( &e->tree, e->window.rows );
 		render( e );
+		if( e->mode == FLTREE )
+			print_cursor( &e->tree.cursor, e->mode );
 	}
 	return;
 }

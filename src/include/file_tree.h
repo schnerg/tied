@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #ifdef _WIN32
 	#include <direct.h>
@@ -30,6 +31,7 @@ typedef struct
 }File_tree;
 
 
+void adjust_cursor_offset( File_tree * tree, i32 rows );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void toggle_file_tree();
 void init_file_tree( File_tree * tree );

@@ -1,10 +1,22 @@
 #include "include/file_tree.h"
 
 
+
 void reset_file_tree( File_tree * tree );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void sort_directory( Line_data * head, bool is_root );
 
+void adjust_cursor_offset( File_tree * tree, i32 rows )
+{
+	if( ( tree->cursor.y_index - tree->cursor.y_offset ) > rows - 2 || tree->cursor.y_index < tree->cursor.y_offset || tree->cursor.y_index + tree->cursor.y_offset > tree->lines.expanded_count )
+	{
+		tree->cursor.y_offset = 0 ;
+		while( ( tree->cursor.y_index - tree->cursor.y_offset ) > rows - 2 )
+			tree->cursor.y_offset++;
+	}
+	
+	return;
+}
 
 void resize_list_expanded( Lines_data * lines )
 {
@@ -156,11 +168,6 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 }
 
 
-
-// check if primary condition is true
-// then check secondary condition
-
-
 void swap( Line_data * a, Line_data * b )
 {	
 	i32 dcount;
@@ -198,6 +205,13 @@ void swap( Line_data * a, Line_data * b )
 }
 
 
+void str_to_lower( char * str )
+{
+	for( i32 i = 0; i < strlen( str ); i++ )
+		str[i] = tolower( str[i] );
+	return;
+}
+
 
 bool compare( Line_data * a, Line_data * b )
 {
@@ -205,7 +219,14 @@ bool compare( Line_data * a, Line_data * b )
 		return true;
 	else if( a->is_dir < b->is_dir )
 		return false;
-	if( strcmp( a->data, b->data ) < 0 )
+
+	char buff_1[50];
+	char buff_2[50];
+	strcpy( buff_1, a->data );
+	strcpy( buff_2, b->data );
+	str_to_lower(buff_1);
+	str_to_lower(buff_2);
+	if( strcmp( buff_1, buff_2 ) < 0 )
 		return true;
 	return false;
 }
@@ -217,7 +238,8 @@ void sort_directory( Line_data * head, bool root )
 	Line_data * index = NULL;
 	Line_data * current = NULL;
 	Line_data * last;
-	bool done = false;	
+	bool done = false;
+
 	if( root )
 		current = head->next;
 	else if( !root )
@@ -229,6 +251,7 @@ void sort_directory( Line_data * head, bool root )
 		last = current; 
 		while( index != NULL )
 		{
+
 			if( compare( index, last ) )
 			{
 				swap( last, index  );

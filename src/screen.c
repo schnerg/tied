@@ -159,9 +159,9 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 					{
 						append_to_buffer( buffer, "\033[33m", 5 );
 						if( tree->lines.list_of_lines[y + tree->cursor.y_offset]->expanded )
-							append_to_buffer( buffer, "+", 1 );
-						else
 							append_to_buffer( buffer, "-", 1 );
+						else
+							append_to_buffer( buffer, "+", 1 );
 						if( tree->lines.list_of_lines[y + tree->cursor.y_offset]->is_dir )
 							append_to_buffer( buffer, "\033[0;34m", 7 );
 						
