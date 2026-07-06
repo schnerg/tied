@@ -35,9 +35,8 @@ void reset_buffer( Buff * buff )
 int resize_buffer( Buff * buff )
 {
 	i32 temp_copacity = buff->copacity * 2;
-	//buff->copacity *= 2;
 	char * temp = realloc( buff->contents, temp_copacity * sizeof( char ) );
-	if( buff->contents != NULL )
+	if( temp != NULL )
 	{
 		buff->contents = temp;
 		buff->copacity = temp_copacity;
