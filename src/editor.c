@@ -712,8 +712,7 @@ void events_file_tree( Editor * e )
 						
 						if( e->saved == false )
 							save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
-						free_file( &e->lines );
-						
+						free_file( &e->lines );	
 						load_file( &e->lines, buff );
 						strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 						init_cursor( &e->cursor );

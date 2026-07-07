@@ -148,7 +148,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 					}
 				}
 				// print rest of file tree	
-				else if( y < tree->lines.expanded_count )
+				else if( y <= tree->lines.expanded_count )
 				{
 					// if directory color text;
 					// print padding for file names!

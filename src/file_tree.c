@@ -1,10 +1,10 @@
 #include "include/file_tree.h"
 
 
-
 void reset_file_tree( File_tree * tree );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void sort_directory( Line_data * head, bool is_root );
+
 
 void adjust_cursor_offset( File_tree * tree, i32 rows )
 {
@@ -13,10 +13,10 @@ void adjust_cursor_offset( File_tree * tree, i32 rows )
 		tree->cursor.y_offset = 0 ;
 		while( ( tree->cursor.y_index - tree->cursor.y_offset ) > rows - 2 )
 			tree->cursor.y_offset++;
-	}
-	
+	}	
 	return;
 }
+
 
 void resize_list_expanded( Lines_data * lines )
 {
@@ -75,7 +75,7 @@ int _update_file_tree_items( File_tree * tree, Line_data * head, i32 index, i32 
 void update_file_tree_items( File_tree * tree, Lines_data * lines )
 {
 	i32 new_count = get_new_size( lines->head->next, lines->count );
-	lines->expanded_count = lines->count + new_count + 1;
+	lines->expanded_count = lines->count + new_count;
 	resize_list_expanded( lines );
 	_update_file_tree_items( tree, lines->head, 0, lines->count, -1 );
 	return;	
@@ -96,9 +96,12 @@ void read_directory( File_tree * tree )
 		return;
 	}
 
-	tree->lines.list_of_lines[tree->cursor.y_index]->head = calloc( 1, sizeof( Line_data ) );
-	tree->lines.list_of_lines[tree->cursor.y_index]->head->data = calloc( 50, sizeof( char ) );	
-	tree->lines.list_of_lines[tree->cursor.y_index]->head->to_display = calloc( 1024, sizeof( char ) );	
+	if( tree->lines.list_of_lines[tree->cursor.y_index]->head == NULL )
+	{
+		tree->lines.list_of_lines[tree->cursor.y_index]->head = calloc( 1, sizeof( Line_data ) );
+		tree->lines.list_of_lines[tree->cursor.y_index]->head->data = calloc( 50, sizeof( char ) );	
+		tree->lines.list_of_lines[tree->cursor.y_index]->head->to_display = calloc( 1024, sizeof( char ) );	
+	}
 
 	Line_data * temp = tree->lines.list_of_lines[tree->cursor.y_index]->head;
 	Line_data * prev = tree->lines.list_of_lines[tree->cursor.y_index];
@@ -120,7 +123,6 @@ void read_directory( File_tree * tree )
 		stat( file_name_and_path, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;	
-		
 		// saving path to file so can use later
 		strcpy( temp->to_display, buff );
 		temp->count = i;
@@ -132,10 +134,21 @@ void read_directory( File_tree * tree )
 		temp = temp->next;
 	}
 	closedir( directory );
-	free( to_be_delete->next->data );
-	free( to_be_delete->next->to_display );
-	free( to_be_delete->next );
-	to_be_delete->next = NULL;
+	if( to_be_delete != NULL )
+	{	
+		free( to_be_delete->next->data );
+		free( to_be_delete->next->to_display );
+		free( to_be_delete->next );
+		to_be_delete->next = NULL;
+	}
+	/*
+	else if( to_be_delete == NULL )
+	{
+		free( temp->data );
+		free( temp->to_display );
+		free( temp );
+	}
+	*/
 	return; 
 }
 
@@ -161,7 +174,6 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 			tree->working_directory[i] = '\0';
 		else
 			tree->working_directory[i+1] = '\0';
-
 		reset_file_tree( tree );
 	}
 	return;
