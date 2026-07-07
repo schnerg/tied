@@ -1,6 +1,6 @@
 #include "include/file_tree.h"
 
-
+//Devine fucking intelect! :D
 void reset_file_tree( File_tree * tree );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void sort_directory( Line_data * head, bool is_root );
@@ -82,19 +82,21 @@ void update_file_tree_items( File_tree * tree, Lines_data * lines )
 }
 
 
-void read_directory( File_tree * tree )
+int read_directory( File_tree * tree )
 {
 	DIR * directory;
 	struct dirent * entry;
 	struct stat file_stat;
 	char buff[1024];	
 	snprintf( buff, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	errno = 0;
 	directory = opendir( buff );
+
+	if( errno == EACCES )
+		return errno;
+
 	if( directory == NULL )
-	{
 		die( "unable to read directory" );
-		return;
-	}
 
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->head == NULL )
 	{
@@ -102,7 +104,6 @@ void read_directory( File_tree * tree )
 		tree->lines.list_of_lines[tree->cursor.y_index]->head->data = calloc( 50, sizeof( char ) );	
 		tree->lines.list_of_lines[tree->cursor.y_index]->head->to_display = calloc( 1024, sizeof( char ) );	
 	}
-
 	Line_data * temp = tree->lines.list_of_lines[tree->cursor.y_index]->head;
 	Line_data * prev = tree->lines.list_of_lines[tree->cursor.y_index];
 	Line_data * to_be_delete = NULL;
@@ -141,25 +142,20 @@ void read_directory( File_tree * tree )
 		free( to_be_delete->next );
 		to_be_delete->next = NULL;
 	}
-	/*
-	else if( to_be_delete == NULL )
-	{
-		free( temp->data );
-		free( temp->to_display );
-		free( temp );
-	}
-	*/
-	return; 
+	return 0; 
 }
 
 
-void expand_tree_at_point_of_cursor( File_tree * tree )
+void expand_tree_at_point_of_cursor( File_tree * tree, char * debug_message)
 {
 	if( strcmp( tree->lines.list_of_lines[tree->cursor.y_index]->data, ".." ) != 0 )
 	{
 		if( tree->lines.list_of_lines[tree->cursor.y_index]->dcount == 0 )
 		{
-			read_directory( tree );
+			if( read_directory( tree ) == EACCES )
+			{
+				strcpy( debug_message, "PERMISSION DENIED!" );
+			}
 			sort_directory( tree->lines.list_of_lines[tree->cursor.y_index], false );
 		}
 		tree->lines.list_of_lines[tree->cursor.y_index]->expanded = true;
@@ -180,8 +176,19 @@ void expand_tree_at_point_of_cursor( File_tree * tree )
 }
 
 
-void change_dir_at_point_of_cursor( File_tree * tree )
+void change_dir_at_point_of_cursor( File_tree * tree, char * debug_message )
 {
+
+	char temp[1024];
+	snprintf( temp, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );	
+	errno = 0;
+	DIR * directory = opendir( temp );
+	if( directory == NULL && errno == EACCES )
+	{
+		strcpy( debug_message, "PERMISSION DENIED!" );
+		return;
+	}
+
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
 		if( ( strlen(  tree->working_directory ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) )  < 1024 - 1 )
 			snprintf( tree->working_directory, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );	

@@ -31,11 +31,11 @@ typedef struct
 }File_tree;
 
 
-void change_dir_at_point_of_cursor( File_tree * tree );
+void change_dir_at_point_of_cursor( File_tree * tree, char * debug_message );
 void adjust_cursor_offset( File_tree * tree, i32 rows );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void toggle_file_tree();
 void init_file_tree( File_tree * tree );
-void expand_tree_at_point_of_cursor( File_tree * tree );
+void expand_tree_at_point_of_cursor( File_tree * tree, char * debug_message );
 void update_file_tree_items( File_tree * tree, Lines_data * lines );
 #endif

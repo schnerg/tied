@@ -36,9 +36,10 @@ void init( Editor * e )
 
 
 
-	if( load_file( &e->lines, e->file_name ) )
+	i32 i = load_file( &e->lines, e->file_name, e->debug_message );
+	
+	if( i == 1 )
 		strcpy( e->debug_message, ": new buffer created" );
-
 
 	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
@@ -530,7 +531,8 @@ void events_normal( Editor * e )
 		case CTRL_KEY( 's' ):
 		{
 			//write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-			if( save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message ) == 0)
+
+			if( save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message ) == 0 )
 			{
 				strcpy( e->debug_message, ": file saved" );
 				e->saved = true;
@@ -610,14 +612,18 @@ void events_file_tree( Editor * e )
 					if( e->tree.cursor.y_index > 1 )
 					{
 						e->tree.cursor.y_index--;
+						strcpy( e->debug_message, "" );
+						render( e );
 						print_cursor( &e->tree.cursor, e->mode );
 					}
 				}break;
 				case 40:
 				{
-					if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1 )
+					if( e->tree.cursor.y_index < e->tree.lines.expanded_count )
 					{
 						e->tree.cursor.y_index++;
+						strcpy( e->debug_message, "" );
+						render( e );
 						print_cursor( &e->tree.cursor, e->mode );
 					}
 				}break;
@@ -641,14 +647,18 @@ void events_file_tree( Editor * e )
 							if( e->tree.cursor.y_index > 1 )
 							{
 								e->tree.cursor.y_index--;
+								strcpy( e->debug_message, "" );
+								render( e );
 								print_cursor( &e->tree.cursor, e->mode );
 							}
 						};break;
 						case 'B':
 						{
-							if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1)
+							if( e->tree.cursor.y_index < e->tree.lines.expanded_count )
 							{
 								e->tree.cursor.y_index++;
+								strcpy( e->debug_message, "" );
+								render( e );
 								print_cursor( &e->tree.cursor, e->mode );
 							}
 						}break;
@@ -671,17 +681,19 @@ void events_file_tree( Editor * e )
 				if( e->tree.cursor.y_offset > 0 && e->tree.cursor.y_index - e->tree.cursor.y_offset < 1 )
 				e->tree.cursor.y_offset--;
 
+				strcpy( e->debug_message, "" );
 				render( e );
 				print_cursor( &e->tree.cursor, e->mode );
 			}
 		}break;
 		case 'j':
 		{					
-			if( e->tree.cursor.y_index < e->tree.lines.expanded_count - 1 )
+			if( e->tree.cursor.y_index < e->tree.lines.expanded_count )
 			{
 				e->tree.cursor.y_index++;
 				if( ( e->tree.cursor.y_index - e->tree.cursor.y_offset ) == e->window.rows - 1 )
 					e->tree.cursor.y_offset++;
+				strcpy( e->debug_message, "" );
 				render( e );
 				print_cursor( &e->tree.cursor, e->mode );
 			}
@@ -691,7 +703,7 @@ void events_file_tree( Editor * e )
 			if( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
 				if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded )
-					expand_tree_at_point_of_cursor( &e->tree );
+					expand_tree_at_point_of_cursor( &e->tree, e->debug_message );
 				else
 				{
 					e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded = false;
@@ -713,8 +725,8 @@ void events_file_tree( Editor * e )
 						if( e->saved == false )
 							save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
 						free_file( &e->lines );	
-						load_file( &e->lines, buff );
-						strcpy( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
+						load_file( &e->lines, buff, e->debug_message );
+						strcpy( e->file_name, buff );
 						init_cursor( &e->cursor );
 						update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
 						free_undo_redo_stacks( e );
@@ -729,7 +741,7 @@ void events_file_tree( Editor * e )
 		}break;
 		case CTRL_KEY( 'c' ):
 		{
-			change_dir_at_point_of_cursor( &e->tree );
+			change_dir_at_point_of_cursor( &e->tree, e->debug_message );
 			render( e );
 			print_cursor( &e->tree.cursor, e->mode );
 		}break;

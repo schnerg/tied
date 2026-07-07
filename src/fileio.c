@@ -9,6 +9,33 @@ bool does_file_exist( File_tree * tree, char * file_name )
 	return false;
 }
 
+// 0 = no permissions
+// 1 = read permissions
+// 2 = read and write permissions
+i32 file_permissions( const char * file_name )
+{
+//	#ifdef _WIN32
+//	#elif __linux__
+	if( access( file_name, F_OK ) == -1 )
+		return -1;
+	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == 0 )
+		return 2;
+	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == -1 )
+		return 1;
+	return 0;
+//	#endif
+}
+
+
+bool is_directory( char * file_name )
+{
+	struct stat file_stat;
+	stat( file_name, &file_stat );
+	if( S_ISDIR( file_stat.st_mode ) )
+		return true;
+	return false;
+}
+
 
 int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window, char * debug_message )
 {
@@ -83,12 +110,11 @@ int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * 
 	if( file_name[0] == '\0' )
 		if( get_file_name( file_name, 255, tree, window, debug_message ) )
 			return 1;
-	
 	errno = 0;
 	FILE * fp = fopen( file_name, "w" );
 	if( fp == NULL )
 	{ 
-		die( "save_file(): Failed to open file."); 
+		strcpy( debug_message, "cannot save file, permission denied");
 		return 1;
 	}
 	Line_data * temp = lines->head;	
@@ -109,7 +135,7 @@ int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * 
 }
 
 
-int load_file( Lines_data * lines, char * file_name )
+int load_file( Lines_data * lines, char * file_name, char * debug_message )
 {
 	lines->list_of_lines = NULL;
 	resize_list( lines );
@@ -128,6 +154,9 @@ int load_file( Lines_data * lines, char * file_name )
 
 	if( file_name[0] == '\0')
 		return 1;
+
+	if( file_permissions( file_name ) == 1 )
+		strcpy( debug_message, ": FILE READ ONLY" );
 
 	FILE * fp = fopen( file_name, "r" );
 	if( fp == NULL )
