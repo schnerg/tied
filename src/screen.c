@@ -115,13 +115,17 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 }
 
 
-void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree )
+void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name )
 {
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
 	Line_data * file_tree_temp = tree->lines.list_of_lines[tree->cursor.y_offset];
 	char buff[window->cols + 1];
+	bool is_c_file = false;
+
+	if( strstr( file_name, ".c" ) != NULL )
+		is_c_file = true;
 
 	for( int y = 0; y < window->rows - 1; y++ )
 	{	
@@ -227,8 +231,11 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( file_tree_toggle == false )
 					if( len > window->cols - ( line_nums + 1) )
 						len = window->cols - ( line_nums + 1 );
-				
-				append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
+			// syntax_highlighting 	
+				if( is_c_file  && syntax )
+					syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
+				else
+					append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
 			}
 		
 			//other line stuff	
@@ -244,8 +251,11 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( file_tree_toggle == false )
 					if( len > window->cols - ( line_nums + 1 ) )
 						len = window->cols - ( line_nums + 1 );
-
-				append_to_buffer( buffer, &temp->to_display[c->x_offset], len );
+			// syntax_highlighting 	
+				if( is_c_file  && syntax )
+					syntax_highlighting( buffer, &temp->to_display[c->x_offset], len);
+				else	
+					append_to_buffer( buffer, &temp->to_display[c->x_offset], len );
 			}
 			append_to_buffer( buffer, "\x1b[K", 3 ); ////clear rowl;
 			

@@ -12,6 +12,7 @@ typedef enum
 }MODE;
 
 extern bool file_tree_toggle;
+extern bool syntax;
 
 
 

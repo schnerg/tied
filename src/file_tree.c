@@ -415,7 +415,7 @@ void init_file_tree( File_tree * tree )
 	read_working_dir( tree );
 	sort_directory( tree->lines.head, true );
 	update_file_tree_items( tree, &tree->lines );
-	file_tree_toggle = false;
+	//file_tree_toggle = false;
 	return;
 }
 

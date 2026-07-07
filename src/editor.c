@@ -34,8 +34,6 @@ void init( Editor * e )
 	e->done = false;
 	e->tabs = 0;
 
-
-
 	i32 i = load_file( &e->lines, e->file_name, e->debug_message );
 	
 	if( i == 1 )
@@ -47,6 +45,8 @@ void init( Editor * e )
 	init_undo_redo_stacks( e );
 	update( e );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	if( file_tree_toggle && e->file_name[0] == '\0' )
+		e->mode = FLTREE;
 	return;	
 }
 
@@ -67,9 +67,14 @@ void render( Editor * e )
 	update_cursor( &e->cursor, e->line_buff );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
- 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree );
+ 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->file_name );
 	print_mode( &e->window, e->mode, e->debug_message );
-	print_cursor( &e->cursor, e->mode );
+
+	if( file_tree_toggle && e->mode == FLTREE )
+		print_cursor( &e->tree.cursor, e->mode );
+	else
+		print_cursor( &e->cursor, e->mode );
+
 	return;
 }
 

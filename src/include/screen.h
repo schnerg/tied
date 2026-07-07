@@ -16,6 +16,7 @@
 
 #include "cursor.h"
 #include "file_tree.h"
+#include "syntax.h"
 
 typedef struct
 {
@@ -31,7 +32,8 @@ typedef struct
 void disable_raw_mode( Window * window );
 void enable_Raw_mode( Window * window );
 bool get_window_size( Window * window );
-void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree );
+//void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree );
+void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name );
 void print_mode( Window * window, int mode, char * debug_message );
 void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff  );
 
