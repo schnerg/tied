@@ -6,7 +6,6 @@ void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void sort_directory( Line_data * head, bool is_root );
 
 
-
 void adjust_cursor_offset( File_tree * tree, i32 rows )
 {
 	if( ( tree->cursor.y_index - tree->cursor.y_offset ) > rows - 2 || tree->cursor.y_index < tree->cursor.y_offset || tree->cursor.y_index + tree->cursor.y_offset > tree->lines.expanded_count )
@@ -131,7 +130,7 @@ i32 read_directory( File_tree * tree )
 		strcpy( temp->to_display, buff );
 		temp->count = i;
 		// incrementing
-		prev = temp;	
+		//prev = temp;	
 		init_line( temp );
 		temp->next->to_display = calloc( 1024, sizeof( char ) );
 		to_be_delete = temp;
@@ -344,7 +343,7 @@ void read_working_dir( File_tree * tree )
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;
 		
-		prev = temp;	
+		//prev = temp;	
 		init_line( temp );
 		temp->next->to_display = calloc( 1024, sizeof( char ) );
 		to_be_delete = temp;
@@ -390,10 +389,6 @@ void free_file_tree( Line_data * head, i32 count, i32 iteration )
 }
 
 
-void delete_file();
-
-void add_file();
-
 
 i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root )
 {
@@ -408,6 +403,7 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 	}	
 	Line_data * temp = NULL;
 	Line_data * next = NULL;
+	Line_data * prev = head;
 	bool new;
 	i32 new_count = 0;
 	while( ( entry = readdir( directory ) ) != NULL )
@@ -461,12 +457,14 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 				next = head->next;
 				head->next = new;
 				new->next = next;
+				new->prev = prev;
 			}
 			else 
 			{
 				next = head->head;
 				head->head = new;
 				new->next = next;
+				new->prev = prev;
 			}
 		}
 	}
@@ -569,10 +567,8 @@ i32 check_dir_for_deleted_items( Line_data * head, const char * dir, const bool 
 		}
 	}
 	closedir( directory );		
-	
 	return delete_files_from_chain( head, root );	
 }
-
 
 
 void _refresh_file_tree( Line_data * head, i32 count, bool root )

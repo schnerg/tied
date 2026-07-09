@@ -22,3 +22,48 @@ char getch( Window * window )
 	#endif
   return c;
 }
+
+int get_input( char * input, const char * message, i32 size, File_tree * tree, i32 rows, Window * window)
+{
+	//write prompt
+	char buff[1024];
+	sprintf( buff, "\x1b[%d;%dH", rows, 13 );
+	write( 0, buff, strlen( buff ) );
+	sprintf( buff, "\33[J" );
+	write( 0, buff, strlen( buff ) );
+	sprintf( buff, "%s", message);
+	write( 0, buff, strlen( buff ) );
+
+//read input
+	int i = 0;	
+	char ch; 
+	char back = '\b';
+	while( ( ch = getch( window ) ) != 13 && i < size )	
+	{
+		if( ch == 27 ) // escape 
+		{
+			return 1;
+		}
+		if ( ch == 127 )// backspace
+		{
+			if(i > 0)
+			{
+				i--;
+				write(STDOUT_FILENO, &back, 1);
+				write(STDOUT_FILENO, " ", 1);
+				write(STDOUT_FILENO, &back, 1);
+			}
+		}
+		else if( isprint( ch ) && !strchr( "<>:\"/\\|?", ch ) )
+		{
+			write(STDOUT_FILENO, &ch, 1);
+			buff[i] = ch;
+			i++;
+		}
+	}
+	buff[i] = '\0';
+	strcpy( input, buff );
+	return 0;
+}
+
+

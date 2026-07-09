@@ -3,6 +3,7 @@
 
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <dirent.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -31,6 +32,7 @@ typedef struct
 }File_tree;
 
 
+void str_to_lower( char * str );
 void refresh_file_tree( File_tree * tree );
 void change_dir_at_point_of_cursor( File_tree * tree, char * debug_message );
 void adjust_cursor_offset( File_tree * tree, i32 rows );

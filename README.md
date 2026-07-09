@@ -10,8 +10,8 @@ it has windows support! :D
 this editor works best on linux.
 
 
-##config
-change variables in varables.c to toggle settings
+##Config
+- change variables in varables.c to toggle settings
 
 ##Installation
 ```
@@ -44,6 +44,7 @@ Filetree mode:
 - ctrl + l : switch to normal mode
 - ctrl + c : change directory to directory at cursor 
 - ctrl + r : refresh file tree
+- ctrl + d : delete a file or directory
 - Enter    : switch to file or expand directory
  
 

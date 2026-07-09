@@ -3,6 +3,7 @@
 
 void update( Editor * e  );
 void add_new_line( Editor * e, char * data, int size_of_data );
+void free_undo_redo_stacks( Editor * e );
 
 
 void init_editor_settings( Editor * e )
@@ -77,6 +78,80 @@ void render( Editor * e )
 
 	return;
 }
+
+
+bool _delete_file( const char * file_name )
+{
+	if( remove( file_name ) == 0 )
+		return 0;
+	else return 1;
+}
+
+
+i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char * file_name )
+{
+	i32 result = 0;
+	char input[1024];
+	char file_name_and_path[1074];
+	snprintf( file_name_and_path, 1074, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
+	{
+		if( get_input( input, "This is a directory type 'yes' to delete: ", 1024, tree, rows, window ) == 1 ) 
+			return result;
+		str_to_lower( input );
+		if( strcmp( input, "yes") == 0 )
+			result = _delete_file( file_name_and_path );
+		else 
+			return result;
+	}
+	else
+	{
+		if( get_input( input, "Delete file? N/y: ", 1024, tree, rows, window ) == 1 ) 
+			return result;
+		str_to_lower( input );
+		if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
+			return result;
+		if( strcmp( input, "y") == 0 )
+			result = _delete_file( file_name_and_path );
+	}
+	if( result == 0 )
+	{
+		refresh_file_tree( tree );
+		if( strcmp( file_name_and_path, file_name ) == 0 )
+		{
+			if( get_input( input, "File loaded, delete buffer? N/y: ", 1024, tree, rows, window ) == 1 ) 
+				return 0;
+			str_to_lower( input );
+			if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
+				return 0;
+			if( strcmp( input, "y") == 0 )
+			{
+				//e->saved = false;
+				e->mode = NORMAL;
+				free_file( &e->lines );	
+				strcpy( e->file_name, "" );
+				load_file( &e->lines, e->file_name, e->debug_message );
+				init_cursor( &e->cursor );
+				update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
+				free_undo_redo_stacks( e );
+				init_undo_redo_stacks( e );
+				update( e );
+				index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+				init_editor_settings( e );
+				}
+			}
+		}
+	return result;
+}
+
+
+
+void add_file()
+{
+	return;
+}
+
+
 
 
 
@@ -750,6 +825,13 @@ void events_file_tree( Editor * e )
 		case CTRL_KEY( 'r' ):
 		{
 			refresh_file_tree( &e->tree );
+			render( e );
+			print_cursor( &e->tree.cursor, e->mode );
+		}break;
+		case CTRL_KEY( 'd' ):
+		{
+			if( delete_file( e, &e->tree, e->window.rows, &e->window, e->file_name ) != 0 )
+				strcpy( e->debug_message, "Could not Delete file or directory!" );
 			render( e );
 			print_cursor( &e->tree.cursor, e->mode );
 		}break;
