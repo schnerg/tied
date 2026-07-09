@@ -14,6 +14,7 @@ typedef struct Line_data
 	i32 dcopacity;
 	i32 copacity;
 	i32 count;
+	bool deleted;
 	bool is_dir;
 	bool expanded;
 	struct Line_data * head;

@@ -719,30 +719,39 @@ void events_file_tree( Editor * e )
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
+
 				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
 				{
 					char buff[1024];
 					if( strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) < 1024 )
 					{
-						e->mode = NORMAL;
 						snprintf( buff, 1024, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
-						
-						if( e->saved == false )
-							save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
-						free_file( &e->lines );	
-						load_file( &e->lines, buff, e->debug_message );
-						strcpy( e->file_name, buff );
-						init_cursor( &e->cursor );
-						update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
-						free_undo_redo_stacks( e );
-						init_undo_redo_stacks( e );
-						update( e );
-						index_to_rx( &e->cursor, e->line_buff, e->line_nums );
-						init_editor_settings( e );
-						render( e );
+						if( file_permissions( buff ) != -1 ) 
+						{
+							e->mode = NORMAL;
+							if( e->saved == false )
+								save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
+							free_file( &e->lines );	
+							load_file( &e->lines, buff, e->debug_message );
+							strcpy( e->file_name, buff );
+							init_cursor( &e->cursor );
+							update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
+							free_undo_redo_stacks( e );
+							init_undo_redo_stacks( e );
+							update( e );
+							index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+							init_editor_settings( e );
+							render( e );
+						}
 					}
 				}
 			}
+		}break;
+		case CTRL_KEY( 's' ):
+		{
+			refresh_file_tree( &e->tree );
+			render( e );
+			print_cursor( &e->tree.cursor, e->mode );
 		}break;
 		case CTRL_KEY( 'c' ):
 		{

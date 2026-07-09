@@ -17,6 +17,7 @@ typedef struct
 
 //void save_file( char * file_name, Lines_data * lines );
 //int save_file( char * file_name, Lines_data * lines );
+i32 file_permissions( const char * file_name );
 bool is_directory( char * file_name );
 void free_file( Lines_data * lines);
 int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * window, char * debug_message );

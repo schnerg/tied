@@ -58,6 +58,7 @@ void init_line( Line_data * temp )
 	temp->next->dcopacity = 0;
 
 	temp->next->is_dir = false;
+	temp->next->deleted = false;
 	temp->next->expanded = false;
 	
 	temp->head = NULL;
