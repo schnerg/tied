@@ -10,6 +10,9 @@ it has windows support! :D
 this editor works best on linux.
 
 
+##config
+change variables in varables.c to toggle settings
+
 ##Installation
 ```
     git clone https://github.com/schnerg/tied
