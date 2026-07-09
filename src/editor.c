@@ -237,7 +237,7 @@ void backspace( Editor * e, char c )
 		if( e->cursor.x_offset < 0 )
 			e->cursor.x_offset = 0;
 		e->cursor.last_x_offset = e->cursor.x_offset;
-		
+		strcpy( e->debug_message, "" );
 	}	
 	else if( e->cursor.y_index > 0 )
 	{
@@ -254,6 +254,7 @@ void backspace( Editor * e, char c )
 			int shift = ( e->window.cols - ( e->cursor.index - e->cursor.x_offset) ) + 1;
 			e->cursor.x_offset += shift;
 		}
+		strcpy( e->debug_message, "" );
 	}
 	update_line_buffer_td( e->line_buff );
 	render( e );
@@ -274,7 +275,6 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 	new_line->next = next_line;
 	if( next_line != NULL )
 		next_line->prev = new_line;
-	
 	new_line->copacity = size_of_data + 50;
 	new_line->data = calloc( new_line->copacity, sizeof( char ) );
 	reset_buffer( e->line_buff );	
@@ -309,9 +309,8 @@ void enter_key( Editor * e, char c )
 	e->cursor.y_index++;
 	if( e->cursor.y_index >= e->window.rows - 2 )
 		e->cursor.y_offset++;	
-
+	strcpy( e->debug_message, "" );
 	e->cursor.last_y_offset = e->cursor.y_offset;
-
 	e->cursor.index = 0;
 	e->cursor.last_index = 0;
 	e->cursor.x_offset = 0;
