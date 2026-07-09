@@ -747,7 +747,7 @@ void events_file_tree( Editor * e )
 				}
 			}
 		}break;
-		case CTRL_KEY( 's' ):
+		case CTRL_KEY( 'r' ):
 		{
 			refresh_file_tree( &e->tree );
 			render( e );

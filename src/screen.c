@@ -117,6 +117,8 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 
 void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name )
 {
+	if( !toggle_line_nums )
+		line_nums = 0;
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
@@ -205,18 +207,21 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 		if( y < lines->count - c->y_offset )
 		{		
 			append_to_buffer( buffer, "\x1b[K", 3 ); //clear rowl;
-			//append line num;
-			char line_num[40];
-			snprintf( line_num, 40, "%i", y + c->y_offset );
-			int line_padding  = line_nums - strlen( line_num );
-			for( int i =0; i < line_padding; i++ )
-				append_to_buffer( buffer, " ", 1 );
-
-			append_to_buffer( buffer, "\033[0;33m", 7 );
-			append_to_buffer( buffer, line_num, strlen(line_num) );
-			append_to_buffer( buffer, "\033[0m", 4 );
-			append_to_buffer( buffer, " ", 1 );
 			
+			//append line num;
+			if( toggle_line_nums )
+			{
+				char line_num[40];
+				snprintf( line_num, 40, "%i", y + c->y_offset );
+				int line_padding  = line_nums - strlen( line_num );
+				for( int i =0; i < line_padding; i++ )
+					append_to_buffer( buffer, " ", 1 );
+				append_to_buffer( buffer, "\033[0;33m", 7 );
+				append_to_buffer( buffer, line_num, strlen(line_num) );
+				append_to_buffer( buffer, "\033[0m", 4 );
+				append_to_buffer( buffer, " ", 1 );
+			}
+
 			//buffer stuff!	
 			if( y == c->y_index - c->y_offset )
 			{

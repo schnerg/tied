@@ -13,6 +13,7 @@ typedef enum
 
 extern bool file_tree_toggle;
 extern bool syntax;
+extern bool toggle_line_nums;
 
 
 

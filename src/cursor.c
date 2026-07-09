@@ -25,7 +25,8 @@ void index_to_rx( Cursor * c, Buff * cbuff, int line_nums )
 		c->rx++;
 	}
 	c->rx -= c->x_offset;
-	c->rx += line_nums + 1;	
+	if( toggle_line_nums )
+		c->rx += line_nums + 1;	
 	if( file_tree_toggle == true )	
 		c->rx += FILE_TREE_WIDTH; 
 

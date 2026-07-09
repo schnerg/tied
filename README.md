@@ -40,6 +40,7 @@ Insert Mode:
 Filetree mode:
 - ctrl + l : switch to normal mode
 - ctrl + c : change directory to directory at cursor 
+- ctrl + r : refresh file tree
 - Enter    : switch to file or expand directory
  
 
