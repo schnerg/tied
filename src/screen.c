@@ -122,8 +122,6 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
-	Line_data * file_tree_temp = tree->lines.list_of_lines[tree->cursor.y_offset];
-	char buff[window->cols + 1];
 	bool is_c_file = false;
 
 	if( strstr( file_name, ".c" ) != NULL )
@@ -145,7 +143,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 						j--;
 						start++;
 					}
-					for( int i = 0; i < FILE_TREE_WIDTH -1; i++ )
+					for( long unsigned int i = 0; i < FILE_TREE_WIDTH -1; i++ )
 					{
 						if( i < strlen(tree->working_directory) )	
 							append_to_buffer( buffer, &tree->working_directory[j + i], 1 );

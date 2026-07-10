@@ -67,11 +67,7 @@ void search( Window * window, Cursor * c, int mode, char * debug_message, Lines_
 			}
 		}
 		if( index == NULL )
-		{
-			char message[40];
-			snprintf( message, 40, "Pattern not found: %s", buff );
-			strcpy( debug_message, message );
-		}
+			strcpy( debug_message,"Pattern not found"  );
 	}
 	return;
 }

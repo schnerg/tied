@@ -88,7 +88,7 @@ bool _delete_file( const char * file_name )
 }
 
 
-i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char * file_name )
+i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name )
 {
 	i32 result = 0;
 	char input[1024];
@@ -96,7 +96,7 @@ i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char *
 	snprintf( file_name_and_path, 1074, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
 	{
-		if( get_input( input, "This is a directory type 'yes' to delete: ", 1024, tree, rows, window ) == 1 ) 
+		if( get_input( input, "This is a directory type 'yes' to delete: ", 1024, window ) == 1 ) 
 			return result;
 		str_to_lower( input );
 		if( strcmp( input, "yes") == 0 )
@@ -106,7 +106,7 @@ i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char *
 	}
 	else
 	{
-		if( get_input( input, "Delete file? N/y: ", 1024, tree, rows, window ) == 1 ) 
+		if( get_input( input, "Delete file? N/y: ", 1024, window ) == 1 ) 
 			return result;
 		str_to_lower( input );
 		if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
@@ -119,7 +119,7 @@ i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char *
 		refresh_file_tree( tree );
 		if( strcmp( file_name_and_path, file_name ) == 0 )
 		{
-			if( get_input( input, "File loaded, delete buffer? N/y: ", 1024, tree, rows, window ) == 1 ) 
+			if( get_input( input, "File loaded, delete buffer? N/y: ", 1024, window ) == 1 ) 
 				return 0;
 			str_to_lower( input );
 			if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
@@ -204,21 +204,26 @@ void remove_line( Editor * e )
 		next_line->prev = line_to_appended_to;
 	int size = line_to_appended_to->count + temp->count;
 
-	char buff[size];
-	memset( buff, 0, size );
-	strncat( buff, line_to_appended_to->data, line_to_appended_to->count );
-	strncat( buff, temp->data, temp->count );
+	i32 i;
+	char * buff = calloc( size, sizeof( char ) );
+	for( i = 0; i < line_to_appended_to->count; i++ )
+		buff[i] = line_to_appended_to->data[i];
+	for( i32 j = 0; j < size; j++ )
+	{
+		buff[i] = temp->data[j];
+		i++;
+	}
 	reset_buffer( e->line_buff );
 	append_to_buffer( e->line_buff, buff, size );
-	
 	e->lines.count--;
+	free( buff );
 	free( temp->data );
 	free( temp );
 	return;
 }
 
 
-void backspace( Editor * e, char c )
+void backspace( Editor * e )
 {
 	if( e->cursor.index > 0 )
 	{
@@ -288,14 +293,15 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 
 
 
-void enter_key( Editor * e, char c )
+void enter_key( Editor * e )
 {
 	e->can_redo = false;
  	push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 	write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
 	Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
-	char buff[temp->count - e->cursor.index];
-		int j =0;
+	i32 size = temp->count - e->cursor.index;
+	char * buff = calloc( size, sizeof( char ) );
+	int j = 0;
 	for( int i = e->cursor.index; i < temp->count; i++ )
 	{
 		buff[j] = temp->data[i];
@@ -303,6 +309,7 @@ void enter_key( Editor * e, char c )
 	}
  	push_new_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
 	add_new_line( e, buff, j );
+	free( buff );
 	temp->count = e->cursor.index;
 	update_line( temp );
 	e->lines.count++;
@@ -499,8 +506,8 @@ void events_insert( Editor * e )
 				}
 			#endif
 		}break;
-		case 13: enter_key( e, c );break; //enter key
-		case BACKSPACE: backspace( e, c ); break;
+		case 13: enter_key( e );break; //enter key
+		case BACKSPACE: backspace( e ); break;
 		default:
 		{
 			if( isprint( c ) || c== '\t' )
@@ -554,7 +561,7 @@ void events_normal( Editor * e )
 		{
 			//e->cursor.index = 0;
 			e->cursor.index = e->lines.list_of_lines[e->cursor.y_index]->count;
-			enter_key( e, c );
+			enter_key( e );
 			e->mode = INSERT;
 			update_cursor( &e->cursor, e->line_buff );
 			print_mode( &e->window, e->mode, e->debug_message );
@@ -635,7 +642,7 @@ void events_normal( Editor * e )
 		}break;
 		case CTRL_KEY( 'f' ):
 		{
-			toggle_file_tree( &e->tree );
+			toggle_file_tree();
 			render( e );
 		}break;
 		case CTRL_KEY( 'h' ):
@@ -837,7 +844,7 @@ void events_file_tree( Editor * e )
 		}break;
 		case CTRL_KEY( 'd' ):
 		{
-			if( delete_file( e, &e->tree, e->window.rows, &e->window, e->file_name ) != 0 )
+			if( delete_file( e, &e->tree, &e->window, e->file_name ) != 0 )
 				strcpy( e->debug_message, "Could not Delete file or directory!" );
 			render( e );
 			print_cursor( &e->tree.cursor, e->mode );
@@ -889,11 +896,13 @@ void quit( Editor * e )
 	// free files
 	Line_data * prev = NULL;
 	Line_data * temp = e->lines.head;
-	for( int i =0; i< e->lines.count; i++ )
+	while( temp != NULL )
 	{
 		prev = temp;
 		temp= temp->next;
 		free( prev->data );
+		if( prev->to_display != NULL )
+			free( prev->to_display );
 		free( prev );
 	}
 	free( e->lines.list_of_lines );
@@ -910,7 +919,10 @@ void quit( Editor * e )
 	free_undo_redo_stacks( e );
 
 	free( e->line_buff->contents );
+	if( e->line_buff->to_display != NULL )
+		free( e->line_buff->to_display );
 	free( e->line_buff );
+	
 	disable_raw_mode( &e->window );
 	return;
 }

@@ -1,7 +1,7 @@
 exec = test.out
 sources = $(wildcard src/*.c)
 objects = $(sources:.c=.o)
-flags = -g
+flags = -g -std=c23 -Wall -Wextra -Wvla -g3 -fsigned-char -fsanitize=address,undefined
 
 $(exec): $(objects)
 	gcc $(objects) $(flags) -o $(exec)

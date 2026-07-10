@@ -40,7 +40,7 @@ bool is_directory( char * file_name )
 int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window, char * debug_message )
 {
 	//write prompt
-	char buff[size];
+	char * buff = calloc( size, sizeof( char ) );
 	sprintf( buff, "\x1b[%d;%dH", window->rows, 13 );
 	write( 0, buff, strlen( buff ) );
 	sprintf( buff, "\33[J" );
@@ -51,12 +51,12 @@ int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window
 	int i = 0;	
 	char ch; 
 	char back = '\b';
-retry:
 	while( ( ch = getch( window ) ) != 13 && i < size )	
 	{
 		if( ch == 27 ) // escape 
 		{
 			strcpy( debug_message, " File not saved" );
+			free(buff);
 			return 1;
 		}
 		if ( ch == 127 )// backspace
@@ -81,10 +81,11 @@ retry:
 	if( does_file_exist( tree, buff ) )
 	{
 		strcpy( debug_message, "\33[41mFILE ALREADY EXISTS!\33[0m");
+		free(buff);
 		return 1;
 	}
-
 	strcpy( file_name, buff );
+	free(buff);
 	return 0;
 }
 

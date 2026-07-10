@@ -20,6 +20,7 @@
 
 typedef struct
 {
+	int no_warnings_int;
 	int rows,cols;
 	#ifdef _WIN32
 		HANDLE hstdin;

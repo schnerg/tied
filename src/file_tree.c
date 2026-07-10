@@ -87,8 +87,11 @@ i32 read_directory( File_tree * tree )
 	DIR * directory;
 	struct dirent * entry;
 	struct stat file_stat;
+
 	char buff[1024];	
-	snprintf( buff, 1024, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	i32 len = strlen( tree->lines.list_of_lines[tree->cursor.y_index]->to_display ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	if( len < 1023 )
+		snprintf( buff, len, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
 	errno = 0;
 	directory = opendir( buff );
 
@@ -110,7 +113,9 @@ i32 read_directory( File_tree * tree )
 	Line_data * prev = tree->lines.list_of_lines[tree->cursor.y_index];
 	Line_data * to_be_delete = NULL;
 	tree->lines.list_of_lines[tree->cursor.y_index]->dcount = 0;
-	i32 i;
+
+	long unsigned int i;
+
 	while( ( entry = readdir( directory ) ) != NULL )
 	{ 
 		if( strcmp( entry->d_name, ".") == 0 || strcmp( entry->d_name, ".." ) == 0 )
@@ -120,15 +125,18 @@ i32 read_directory( File_tree * tree )
 		for( i = 0; i < 50 && i < strlen(entry->d_name); i++ )
 			temp->data[i] = entry->d_name[i];
 		temp->data[i] = '\0';
+		temp->count = i;
 		// checking if file is directory
 		char file_name_and_path[1024];
-		snprintf( file_name_and_path, 1024, "%s/%s", buff, entry->d_name );
+		i32 len = strlen( buff ) + strlen( entry->d_name ) + 1;
+		if( len < 1024 )
+		snprintf( file_name_and_path, len, "%s/%s", buff, entry->d_name );
+		
 		stat( file_name_and_path, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;	
 		// saving path to file so can use later
 		strcpy( temp->to_display, buff );
-		temp->count = i;
 		// incrementing
 		//prev = temp;	
 		init_line( temp );
@@ -248,7 +256,7 @@ void swap( Line_data * a, Line_data * b )
 
 void str_to_lower( char * str )
 {
-	for( i32 i = 0; i < strlen( str ); i++ )
+	for( long unsigned int i = 0; i < strlen( str ); i++ )
 		str[i] = tolower( str[i] );
 	return;
 }
@@ -321,7 +329,7 @@ void read_working_dir( File_tree * tree )
 	Line_data * prev = tree->lines.head;
 	Line_data * to_be_delete = NULL;
 	tree->lines.count = 0;
-	i32 i;
+	long unsigned int i;
 	while( ( entry = readdir( directory ) ) != NULL )
 	{ 
 		if( strcmp( entry->d_name, ".") == 0 )
@@ -338,7 +346,9 @@ void read_working_dir( File_tree * tree )
 			strcpy( temp->to_display, tree->working_directory );
 
 		char buff[1024];
-		snprintf( buff, 1024, "%s/%s", tree->working_directory, temp->data );
+		i32 len = strlen( tree->working_directory ) + strlen( temp->data ) + 1;
+		if( len < 1024 )
+		snprintf( buff, len, "%s/%s", tree->working_directory, temp->data );
 		stat( buff, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;
@@ -519,7 +529,6 @@ i32 check_dir_for_deleted_items( Line_data * head, const char * dir, const bool 
 {
 	DIR * directory;
 	struct dirent * entry;
-	struct stat file_stat;
 	directory = opendir( dir );
 	if( directory == NULL )
 	{
@@ -528,8 +537,6 @@ i32 check_dir_for_deleted_items( Line_data * head, const char * dir, const bool 
 	}	
 
 	Line_data * temp = NULL;
-	Line_data * next = NULL;
-	i32 new_count = 0;
 	if( root )
 		 	temp = head->next;
 	else

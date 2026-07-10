@@ -34,7 +34,7 @@ bool word_in_storage_class(char *word)
 }
 typedef struct
 {
-	unsigned int i;	
+	int i;	
 	char c;
 	char * data;
 }lexer_t;
@@ -138,7 +138,7 @@ void get_string(lexer_t * lexer,char * buffer, const int len)
 void syntax_highlighting(Buff * buffer, char * str, const int len)
 {
 	lexer_t * lexer = init_lexer(str);
-	char word[len];
+	char * word = calloc( len, sizeof( char ) );
 	while(lexer->i < len )
 	{
 		if(isalpha(lexer->c))
@@ -177,5 +177,6 @@ void syntax_highlighting(Buff * buffer, char * str, const int len)
 			continue;
 		}
 	}
+	free( word );
 	free(lexer);
 }

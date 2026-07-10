@@ -58,8 +58,10 @@ void print_cursor( Cursor * c, int mode )
 		write( STDOUT_FILENO, block, strlen( block ) );
 	if( mode == 1 ) // insert mode
 		write( STDOUT_FILENO, bar, strlen( bar ) );
+
 	char buff[40];
 	snprintf( buff, 40, "\x1b[%d;%dH", c->y_index - c->y_offset + 1, c->rx + 1 );
+	
 	write( STDOUT_FILENO, buff, strlen( buff ) );
 	return;
 }

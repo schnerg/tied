@@ -12,7 +12,7 @@ void update_line( Line_data * line )
 		if( line->data[i] == '\t' )
 			tabs++;
 
-	line->to_display = malloc( ( line->count + ( tabs * ( TAB_STOP - 1 ) ) + 1 ) * sizeof( char ) );
+	line->to_display = calloc( ( line->count + ( tabs * ( TAB_STOP - 1 ) ) + 1 ), sizeof( char ) );
 	if( line->to_display == NULL ) die("update_line(): malloc failed to allocate memory!\n");
 
 	j = 0;
