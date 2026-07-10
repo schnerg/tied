@@ -10,10 +10,10 @@ it has windows support! :D
 this editor works best on linux.
 
 
-##Config
+## Config
 - change variables in varables.c to toggle settings
 
-##Installation
+## Installation
 ```
     git clone https://github.com/schnerg/tied
     cd tied/
@@ -23,7 +23,7 @@ this editor works best on linux.
 make sure to change location of install in Makefile
 
 
-##Usage
+## Usage
 Normal Mode:
 - o : new line and insert mode
 - i : insert mode
@@ -48,6 +48,6 @@ Filetree mode:
 - Enter    : switch to file or expand directory
  
 
-##Contributing
+## Contributing
 
 Contributions are always welcome. :) 
