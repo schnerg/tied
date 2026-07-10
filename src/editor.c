@@ -126,7 +126,6 @@ i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char *
 				return 0;
 			if( strcmp( input, "y") == 0 )
 			{
-				//e->saved = false;
 				e->mode = NORMAL;
 				free_file( &e->lines );	
 				strcpy( e->file_name, "" );
@@ -139,6 +138,9 @@ i32 delete_file( Editor * e, File_tree * tree, i32 rows, Window * window, char *
 				index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 				init_editor_settings( e );
 				}
+			else
+				e->mode = NORMAL;
+
 			}
 		}
 	return result;
@@ -153,11 +155,10 @@ void add_file()
 
 
 
-
-
 void insert_char_to_buff( Editor * e, char c )
 {
 	e->can_redo = false;
+	e->saved = false;
 	Buff * temp = e->line_buff;
 	temp->count++;
 	if( e->line_buff->index == -1 )
@@ -222,6 +223,7 @@ void backspace( Editor * e, char c )
 	if( e->cursor.index > 0 )
 	{
 		e->can_redo = false;
+		e->saved = false;
 		if( e->line_buff->index == -1 )
 			e->line_buff->index = e->cursor.index;
 		e->line_buff->has_changed = true;
@@ -242,6 +244,7 @@ void backspace( Editor * e, char c )
 	else if( e->cursor.y_index > 0 )
 	{
 		e->can_redo = false;
+		e->saved = false;
 		e->cursor.index = e->lines.list_of_lines[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;	
  		push_del_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
@@ -793,9 +796,16 @@ void events_file_tree( Editor * e )
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
-
+				
 				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
 				{
+
+					if( e->saved == false )
+					{
+						strcpy( e->debug_message, "FILE NOT SAVED!");
+						render( e );
+						break;
+					}
 					char buff[1024];
 					if( strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) < 1024 )
 					{
@@ -803,8 +813,6 @@ void events_file_tree( Editor * e )
 						if( file_permissions( buff ) != -1 ) 
 						{
 							e->mode = NORMAL;
-							if( e->saved == false )
-								save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message );
 							free_file( &e->lines );	
 							load_file( &e->lines, buff, e->debug_message );
 							strcpy( e->file_name, buff );
