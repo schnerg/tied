@@ -1,6 +1,22 @@
 #include "include/cursor.h"
 
 
+i32 int_to_str_size( i32 i )
+{
+	i32 n = 0;
+	while( i > 0 )
+	{
+		i = i / 10;
+		n++;
+	}
+	if( n == 0 )
+		n++;
+	return n;
+}
+
+
+
+
 void init_cursor( Cursor * c )
 {
 	c->rx = 0;
@@ -38,12 +54,8 @@ void update_cursor( Cursor * c, Buff * line_buff )
 {
 	c->index = c->last_index;
 	if( c->index > line_buff->count )
-	{
 		while( c->index > line_buff->count )
-		{
 			c->index--;
-		}
-	}
 	c->x_offset = c->last_x_offset;
 	c->y_offset = c->last_y_offset;
 	return;
@@ -58,11 +70,13 @@ void print_cursor( Cursor * c, int mode )
 		write( STDOUT_FILENO, block, strlen( block ) );
 	if( mode == 1 ) // insert mode
 		write( STDOUT_FILENO, bar, strlen( bar ) );
-
-	char buff[40];
-	snprintf( buff, 40, "\x1b[%d;%dH", c->y_index - c->y_offset + 1, c->rx + 1 );
-	
-	write( STDOUT_FILENO, buff, strlen( buff ) );
+	i32 new_size = strlen ("\x1b[;H") + int_to_str_size( c->y_index - c->y_offset + 1 ) + int_to_str_size( c->rx + 1 ) + 1;
+	char * temp_data = calloc( new_size, sizeof( char ) );
+	snprintf( temp_data, new_size, "\x1b[%d;%dH", c->y_index - c->y_offset + 1, c->rx + 1 );
+	write( STDOUT_FILENO, temp_data, strlen( temp_data ) );
+	free( temp_data );
 	return;
 }
+
+
 

@@ -3,11 +3,12 @@
 
 #define TAB_STOP 4
 
-#include "buffer.h"
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 
+#include "buffer.h"
+#include "global.h"
 typedef struct
 {
 	int rx;
@@ -20,6 +21,7 @@ typedef struct
 	int y_offset;
 }Cursor;
 
+i32 int_to_str_size( i32 i );
 void init_cursor( Cursor * c );
 void print_cursor( Cursor * c, int mode );
 void update_cursor( Cursor * c, Buff * line_buff );

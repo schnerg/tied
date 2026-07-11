@@ -51,23 +51,11 @@ void init( Editor * e )
 }
 
 
-i32 int_to_str_size( i32 i )
-{
-	i32 n = 0;
-	while( i > 0 )
-	{
-		i = i / 10;
-		n++;
-	}
-	return n;
-}
 
 
 void update( Editor * e )
 {
-	char buf[40];
-	snprintf( buf,40,"%i", e->lines.count );
-	e->line_nums = strlen( buf );
+	e->line_nums = int_to_str_size( e->lines.count );
 	return;
 }
 
@@ -80,12 +68,10 @@ void render( Editor * e )
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
  	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->file_name );
 	print_mode( &e->window, e->mode, e->debug_message );
-
 	if( file_tree_toggle && e->mode == FLTREE )
 		print_cursor( &e->tree.cursor, e->mode );
 	else
 		print_cursor( &e->cursor, e->mode );
-
 	return;
 }
 
@@ -195,7 +181,7 @@ void insert_char_to_buff( Editor * e, char c )
 
 
 	e->cursor.index++;
-		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	if( e->cursor.rx >= e->window.cols  - 1 )
 		e->cursor.x_offset += e->window.cols / 2 ;
 	
@@ -235,6 +221,7 @@ void remove_line( Editor * e )
 	e->lines.count--;
 	free( buff );
 	free( temp->data );
+	free( temp->to_display );
 	free( temp );
 	return;
 }
