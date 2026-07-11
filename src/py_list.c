@@ -18,6 +18,8 @@ py_list_t * init_py_list( int item_size )
 		free( list );
 		return NULL;
 	}
+	for( int i = 0; i < list->copacity; i++ )
+		list->items[i] = NULL;
 	return list;
 }
 

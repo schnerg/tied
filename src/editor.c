@@ -556,9 +556,13 @@ void events_insert( Editor * e )
 		{		
 			#ifdef _WIN32	
 				e->mode = NORMAL;
- 				push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
-				write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 				push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+				if( e->line_buff->has_changed )
+				{
+ 					push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+					push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+				}
+				
 				update_cursor( &e->cursor, e->line_buff );
 				print_mode( &e->window, e->mode, e->debug_message );
 				print_cursor( &e->cursor, e->mode );
@@ -566,9 +570,12 @@ void events_insert( Editor * e )
 				if( !events_move_cursor_insert_linux( e ) )
 				{
 					e->mode = NORMAL;
+				if( e->line_buff->has_changed )
+				{
  					push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
  					push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+				}
 					update_cursor( &e->cursor, e->line_buff );
 					print_mode( &e->window, e->mode, e->debug_message );
 					print_cursor( &e->cursor, e->mode );
@@ -737,22 +744,24 @@ void events_normal( Editor * e )
 
 void free_undo_redo_stacks( Editor * e )
 {
-	for( int i = 0; i < e->undo_stack->count; i++ )
+	for( int i = 0; i < e->undo_stack->copacity; i++ )
 	{
 		if( e->undo_stack->items[i] != NULL )
 			free_change( e->undo_stack->items[i] );
 	}
 	free( e->undo_stack->items );
 	free( e->undo_stack );
-	
-	for( int i = 0; i < e->redo_stack->count; i++ )
+
+	for( int i = 0; i < e->redo_stack->copacity; i++ )
 	{
 		if( e->redo_stack->items[i] != NULL )
 			free_change( e->redo_stack->items[i] );
 	}
 	free( e->redo_stack->items );
 	free( e->redo_stack );
+	return;
 }
+
 
 
 void events_file_tree( Editor * e ) 

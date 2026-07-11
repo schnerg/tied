@@ -1,11 +1,26 @@
 #include "include/undo_redo.h"
 
 
+Change * init_change()
+{
+	Change * temp = calloc( 1, sizeof( Change ) );
+	temp->data = NULL;
+	temp->line_added = false;
+	temp->line_deleted = false;
+	temp->line_num = 0;
+	temp->num_lines_changed = 0;
+	temp->index = 0;
+	return temp;
+}
+
+
 void free_change( Change * change )
 {
 	if( change->data != NULL )
 	{
 		free( change->data->contents );
+		if( change->data->to_display != NULL )
+			free( change->data->to_display );
 		free( change->data );
 	}
 	free( change );
@@ -16,14 +31,17 @@ void free_change( Change * change )
 void free_change_if_needed( py_list_t * list )
 {	
 	if( list->items[list->count] != NULL )
+	{
 		free_change( list->items[list->count] );
+		list->items[list->count] = NULL;
+	}
 	return;
 }
 
 
 void push_insert_to_redo_stack( py_list_t * redo_stack, Line_data * line, Cursor * c )
 {
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->data = init_buffer();
 	append_to_buffer( change->data, line->data, line->count );
 	change->line_num = c->y_index;
@@ -34,7 +52,7 @@ void push_insert_to_redo_stack( py_list_t * redo_stack, Line_data * line, Cursor
 
 void push_insert_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Line_data * line, Cursor * c )
 {
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->data = init_buffer();
 	if( line_buff->line_deleted == false && line_buff->line_added == false )
 		change->index = line_buff->index;
@@ -49,7 +67,7 @@ void push_insert_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Line_d
 
 void push_add_line_to_redo_stack( py_list_t * redo_stack, Line_data * line, Cursor * c )
 {
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->line_added = true;
 	change->line_num = c->y_index;
 	change->data = init_buffer();
@@ -63,7 +81,7 @@ void push_new_line_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Curs
 {
 	line_buff->has_changed = true;
 	line_buff->line_added = true;
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->line_added = true;
 	change->data = init_buffer();
 	change->data->index = c->index;
@@ -78,7 +96,7 @@ void push_new_line_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Curs
 
 void push_undo_del_line_to_redo_stack( py_list_t * redo_stack, Cursor * c )
 {
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->line_deleted = true;
 	change->line_num = c->y_index;
 	append_to_py_list( redo_stack, change );
@@ -90,7 +108,7 @@ void push_del_line_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Curs
 {
 	line_buff->has_changed = true;
 	line_buff->line_deleted = true;
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->line_deleted = true;
 	change->data = init_buffer();
 	change->data->index = line_buff->index;
@@ -105,7 +123,7 @@ void push_del_line_to_undo_stack( py_list_t * undo_stack, Buff * line_buff, Curs
 
 void push_change_to_redo_stack( py_list_t * redo_stack,  int num_lines_changed )
 {
-	Change * change = calloc( 1, sizeof( Change ) );
+	Change * change = init_change();
 	change->num_lines_changed = num_lines_changed;
 	append_to_py_list( redo_stack, change );
 	return;
@@ -116,7 +134,7 @@ void push_change_to_undo_stack( py_list_t * undo_stack, py_list_t * redo_stack, 
 {
 	if( line_buff->has_changed )
 	{
-		Change * change = calloc( 1, sizeof( Change ) );
+		Change * change = init_change();
 		if( line_buff->line_deleted )
 			change->line_deleted = true;
 		if( line_buff->line_added )
@@ -176,10 +194,15 @@ void redo_change( py_list_t * redo_stack, py_list_t * undo_stack, Cursor * c, Li
 	if( *can_redo )
 	{
 		Change * change = redo_stack->items[redo_stack->count - 1];
+		redo_stack->items[redo_stack->count - 1] = NULL;
 		int changes = change->num_lines_changed;
 		undo_stack->count++;
 		redo_stack->count--;
+
 		free_change( change );
+		//maybe?
+		//free_change( change );
+		
 		for( int i = 0; i < changes; i++ )
 		{
 			change = redo_stack->items[redo_stack->count - 1];
@@ -188,6 +211,7 @@ void redo_change( py_list_t * redo_stack, py_list_t * undo_stack, Cursor * c, Li
 				c->y_index = change->line_num;
 				write_line_buffer_to_line( lines->list_of_lines[c->y_index], change->data );
 				free_change( change );
+				redo_stack->items[redo_stack->count - 1] = NULL;
 			}
 			else if( change->line_deleted )
 			{
@@ -196,6 +220,7 @@ void redo_change( py_list_t * redo_stack, py_list_t * undo_stack, Cursor * c, Li
 				update_list_of_lines( lines );
 				c->y_index--;
 				free_change( change );
+				redo_stack->items[redo_stack->count - 1] = NULL;
 			}
 			//why does this work!?
 			//still no idea why this works!
@@ -210,6 +235,7 @@ void redo_change( py_list_t * redo_stack, py_list_t * undo_stack, Cursor * c, Li
 					c->y_offset++;
 				c->last_y_offset = c->y_offset;
 				free_change( change );
+				redo_stack->items[redo_stack->count - 1] = NULL;
 			}
 			undo_stack->count++;
 			redo_stack->count--;
@@ -271,7 +297,7 @@ void undo_change( py_list_t * redo_stack, py_list_t * undo_stack, Cursor * c, Li
 		}	
  		push_change_to_redo_stack( redo_stack, changes );
 		update_line_buffer( line_buff, lines->list_of_lines[c->y_index] );
-		if( undo_stack->count == 0 )
+		if( undo_stack->count <= 0 )
 			*can_undo = false;
 		*can_redo = true;
 	}
