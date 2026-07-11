@@ -123,9 +123,10 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
 	bool is_c_file = false;
-
-	if( strstr( file_name, ".c" ) != NULL )
-		is_c_file = true;
+	
+	if( file_name != NULL )
+		if( strstr( file_name, ".c" ) != NULL )
+			is_c_file = true;
 
 	for( int y = 0; y < window->rows - 1; y++ )
 	{	

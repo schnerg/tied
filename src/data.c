@@ -14,7 +14,6 @@ void update_line( Line_data * line )
 
 	line->to_display = calloc( ( line->count + ( tabs * ( TAB_STOP - 1 ) ) + 1 ), sizeof( char ) );
 	if( line->to_display == NULL ) die("update_line(): malloc failed to allocate memory!\n");
-
 	j = 0;
 	for( i = 0; i < line->count; i++ )
 	{
@@ -52,6 +51,7 @@ void init_line( Line_data * temp )
 	if( temp->next == NULL ) die( "init_line(): failed to calloc memory for next line." );
 	temp->next->data = calloc( 50, sizeof( char ) );
 	if( temp->next->data == NULL ) die( "init_line(): failed to calloc memory for next lines data." );
+	
 	temp->next->copacity = 50;
 	temp->next->count = 0;
 	temp->next->dcount = 0;

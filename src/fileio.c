@@ -3,6 +3,7 @@
 
 bool does_file_exist( File_tree * tree, char * file_name )
 {
+ 	refresh_file_tree( tree );
 	for( int i = 1; i < tree->lines.count; i++ )
 		if( strcmp( tree->lines.list_of_lines[i]->data, file_name ) == 0 )
 			return true;
@@ -37,7 +38,7 @@ bool is_directory( char * file_name )
 }
 
 
-int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window, char * debug_message )
+char * get_file_name( i32 size, File_tree * tree, Window * window, char * debug_message )
 {
 	//write prompt
 	char * buff = calloc( size, sizeof( char ) );
@@ -57,7 +58,7 @@ int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window
 		{
 			strcpy( debug_message, " File not saved" );
 			free(buff);
-			return 1;
+			return NULL;
 		}
 		if ( ch == 127 )// backspace
 		{
@@ -76,17 +77,14 @@ int get_file_name( char * file_name, i32 size, File_tree * tree, Window * window
 			i++;
 		}
 	}
-	buff[i] = '\0';
-	
+	buff[i] = '\0';	
 	if( does_file_exist( tree, buff ) )
 	{
 		strcpy( debug_message, "\33[41mFILE ALREADY EXISTS!\33[0m");
 		free(buff);
-		return 1;
+		return NULL;
 	}
-	strcpy( file_name, buff );
-	free(buff);
-	return 0;
+	return buff;
 }
 
 
@@ -94,13 +92,16 @@ void free_file( Lines_data * lines)
 {
 	Line_data * prev = NULL;
 	Line_data * temp = lines->head;
-	for( int i =0; i< lines->count; i++ )
+	while( temp != NULL )
 	{
 		prev = temp;
 		temp = temp->next;
 		free( prev->data );
+		if( prev->to_display != NULL )
+			free( prev->to_display );
 		free( prev );
 	}
+	free( lines->list_of_lines );
 	lines->count = 0;
 	return;
 }
@@ -108,8 +109,8 @@ void free_file( Lines_data * lines)
 
 int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * window, char * debug_message )
 {
-	if( file_name[0] == '\0' )
-		if( get_file_name( file_name, 255, tree, window, debug_message ) )
+	if( file_name == NULL )
+		if( (file_name = get_file_name( 1024, tree, window, debug_message ) ) == NULL )
 			return 1;
 	errno = 0;
 	FILE * fp = fopen( file_name, "w" );
@@ -136,7 +137,7 @@ int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * 
 }
 
 
-int load_file( Lines_data * lines, char * file_name, char * debug_message )
+int load_file( Lines_data * lines, FILE * file, char * file_name, char * debug_message )
 {
 	lines->list_of_lines = NULL;
 	resize_list( lines );
@@ -153,19 +154,23 @@ int load_file( Lines_data * lines, char * file_name, char * debug_message )
 	lines->list_of_lines[lines->count - 1] = temp;
 	resize_list( lines );
 
-	if( file_name[0] == '\0')
+	if( file_name == NULL )
 		return 1;
 
 	if( file_permissions( file_name ) == 1 )
 		strcpy( debug_message, ": FILE READ ONLY" );
-
-	FILE * fp = fopen( file_name, "r" );
-	if( fp == NULL )
-		return 1;
 	
+	
+	if( file == NULL )
+	{
+		FILE * fp = fopen( file_name, "r" );
+		if( fp == NULL )
+			return 1;
+		file = fp;
+	}
 	int c;	
 	register unsigned int i = 0;
-	while( ( c = fgetc ( fp ) ) != EOF )
+	while( ( c = fgetc ( file ) ) != EOF )
 	{
 		if( c == '\n' )
 		{
@@ -193,7 +198,7 @@ int load_file( Lines_data * lines, char * file_name, char * debug_message )
 	lines->count--;
 	if( lines->count == 0 )
 		lines->count++;
-	fclose(fp);
+	fclose( file );
 	return 0;
 }
 

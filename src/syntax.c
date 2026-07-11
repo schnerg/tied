@@ -121,7 +121,7 @@ void append_proper(Buff * buffer,char * word)
 
 void get_string(lexer_t * lexer,char * buffer, const int len)
 {
-	int i =0;
+	int i = 0;
 		buffer[i] = lexer->c;
 	do
 	{

@@ -13,6 +13,7 @@ void init_editor_settings( Editor * e )
 	return;
 }
 
+
 void init_undo_redo_stacks( Editor * e )
 {
 	e->can_undo = false;
@@ -34,23 +35,32 @@ void init( Editor * e )
 	strcpy( e->debug_message, "" );
 	e->done = false;
 	e->tabs = 0;
-
-	i32 i = load_file( &e->lines, e->file_name, e->debug_message );
-	
+	i32 i = load_file( &e->lines, NULL, e->file_name, e->debug_message );
 	if( i == 1 )
 		strcpy( e->debug_message, ": new buffer created" );
-
 	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
 	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
 	init_undo_redo_stacks( e );
 	update( e );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
-	if( file_tree_toggle && e->file_name[0] == '\0' )
+
+	if( file_tree_toggle && e->file_name == NULL )
 		e->mode = FLTREE;
 	return;	
 }
 
+
+i32 int_to_str_size( i32 i )
+{
+	i32 n = 0;
+	while( i > 0 )
+	{
+		i = i / 10;
+		n++;
+	}
+	return n;
+}
 
 
 void update( Editor * e )
@@ -90,46 +100,53 @@ bool _delete_file( const char * file_name )
 
 i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name )
 {
+	
 	i32 result = 0;
 	char input[1024];
-	char file_name_and_path[1074];
-	snprintf( file_name_and_path, 1074, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	
+	i32 len = strlen( tree->lines.list_of_lines[tree->cursor.y_index]->to_display ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) + 2;
+	char * temp_data = NULL;
+
+	temp_data = calloc( len, sizeof( char ) );
+	snprintf( temp_data, len , "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
+	
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
 	{
 		if( get_input( input, "This is a directory type 'yes' to delete: ", 1024, window ) == 1 ) 
-			return result;
+			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "yes") == 0 )
-			result = _delete_file( file_name_and_path );
+			result = _delete_file( temp_data );
 		else 
-			return result;
+			goto done;
 	}
 	else
 	{
 		if( get_input( input, "Delete file? N/y: ", 1024, window ) == 1 ) 
-			return result;
+			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
-			return result;
+			goto done;
 		if( strcmp( input, "y") == 0 )
-			result = _delete_file( file_name_and_path );
+			result = _delete_file( temp_data );
 	}
 	if( result == 0 )
 	{
 		refresh_file_tree( tree );
-		if( strcmp( file_name_and_path, file_name ) == 0 )
+		if( strcmp( temp_data, file_name ) == 0 )
 		{
 			if( get_input( input, "File loaded, delete buffer? N/y: ", 1024, window ) == 1 ) 
-				return 0;
+				goto done;
 			str_to_lower( input );
 			if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
-				return 0;
+				goto done;
 			if( strcmp( input, "y") == 0 )
 			{
-				e->mode = NORMAL;
+				//e->mode = NORMAL;
 				free_file( &e->lines );	
-				strcpy( e->file_name, "" );
-				load_file( &e->lines, e->file_name, e->debug_message );
+				free( e->file_name );
+				e->file_name = NULL;
+				load_file( &e->lines, NULL, e->file_name, e->debug_message );
 				init_cursor( &e->cursor );
 				update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
 				free_undo_redo_stacks( e );
@@ -137,22 +154,22 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 				update( e );
 				index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 				init_editor_settings( e );
-				}
-			else
-				e->mode = NORMAL;
-
 			}
 		}
+	}
+done:
+	free( temp_data );
 	return result;
 }
 
 
-
-void add_file()
+/*
+i32 create_file( Editor * e, File_tree * tree, Window * window )
 {
-	return;
-}
 
+	return 0;
+}
+*/
 
 
 void insert_char_to_buff( Editor * e, char c )
@@ -789,6 +806,7 @@ void events_file_tree( Editor * e )
 		}break;
 		case 13:// enter key
 		{
+
 			if( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
 				if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->expanded )
@@ -803,26 +821,47 @@ void events_file_tree( Editor * e )
 			}
 			else if( !e->tree.lines.list_of_lines[e->tree.cursor.y_index]->is_dir )
 			{
-				
-				if( strcmp( e->file_name, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) != 0 )
-				{
+				i32 new_len = 0;	
+				char * temp_data = NULL;
+				new_len = strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) + 2;
+				temp_data = calloc( new_len, sizeof( char ) );
+				snprintf( temp_data, new_len, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 
-					if( e->saved == false )
+				if( e->file_name == NULL )
+					goto open_file;
+
+				else if( strcmp( e->file_name, temp_data ) != 0 )
+					goto open_file;
+				else 
+				{
+					free( temp_data );
+					break;
+				}
+open_file:
+				if( e->saved == false )
+				{
+					strcpy( e->debug_message, "FILE NOT SAVED!");
+					render( e );
+					break;
+				}
+				
+				if( file_permissions( temp_data ) != -1 ) 
+				{
+					FILE * file = fopen( temp_data, "r" );
+					if( file == NULL )
 					{
-						strcpy( e->debug_message, "FILE NOT SAVED!");
-						render( e );
+						free( temp_data );
 						break;
 					}
-					char buff[1024];
-					if( strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display ) + strlen( e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data ) < 1024 )
+					else
 					{
-						snprintf( buff, 1024, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
-						if( file_permissions( buff ) != -1 ) 
+						free_file( &e->lines );
+						if( load_file( &e->lines, file, temp_data, e->debug_message ) != 1 )
 						{
 							e->mode = NORMAL;
-							free_file( &e->lines );	
-							load_file( &e->lines, buff, e->debug_message );
-							strcpy( e->file_name, buff );
+							if( e->file_name != NULL )
+								free( e->file_name );
+							e->file_name = temp_data;
 							init_cursor( &e->cursor );
 							update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
 							free_undo_redo_stacks( e );
@@ -832,8 +871,10 @@ void events_file_tree( Editor * e )
 							init_editor_settings( e );
 							render( e );
 						}
+						break;
 					}
 				}
+				free( temp_data );
 			}
 		}break;
 		case CTRL_KEY( 'r' ):
@@ -906,11 +947,12 @@ void quit( Editor * e )
 		free( prev );
 	}
 	free( e->lines.list_of_lines );
-
+	free( e->file_name );
 	// free file tree
 	free_file_tree( e->tree.lines.head, e->tree.lines.count, 0 );
 	free( e->tree.lines.head );
 	free( e->tree.lines.list_of_lines );
+	free( e->tree.working_directory );
 
 	//clear screen!
 	write( STDOUT_FILENO, "\x1b[2J", 4 );

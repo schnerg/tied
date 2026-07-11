@@ -25,7 +25,7 @@
 typedef struct 
 {
 	Cursor cursor;
-	char working_directory[1024];
+	char * working_directory;
 	Lines_data lines;
 //	Line_data * head;
 	bool working_directory_changed;

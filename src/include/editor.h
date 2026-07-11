@@ -51,7 +51,7 @@ typedef struct
 	//editor settings
 	bool saved;
 	char debug_message[40];
-	char file_name[1024];
+	char * file_name;
 //window stuffs
 	bool done;
 	Window window;
