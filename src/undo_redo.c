@@ -147,7 +147,7 @@ void remove_line_2( Lines_data * lines, Cursor * c )
 		next_line->prev = line_to_appended_to;
 	lines->count--;
 	free( temp->data );
-	free( temp->to_display)
+	free( temp->to_display);
 	free( temp );
 	return;
 }

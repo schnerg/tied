@@ -115,6 +115,55 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 }
 
 
+void update_display_line( Buff * line_buff, Cursor * c, Window * window, int line_nums, const char * file_name )
+{
+	Buff * buffer = init_buffer();
+	
+	bool is_c_file = false;
+		if( file_name != NULL )
+			if( strstr( file_name, ".c" ) != NULL )
+				is_c_file = true;
+		//Line_data * temp = lines->list_of_lines[c->y_index];
+	
+	int y = c->y_index - c->y_offset + 1;
+	int x = line_nums + 2;
+	if( file_tree_toggle )
+		x += FILE_TREE_WIDTH;
+	int new_size = int_to_str_size( x ) + int_to_str_size( y ) + strlen("\x1b[;H") + 1;
+	char * temp_data = calloc( new_size, sizeof( char ) );
+	snprintf( temp_data, new_size, "\x1b[%d;%dH", y, x );
+	append_to_buffer(buffer, "\e[?25l",6); // hide cursor	
+	append_to_buffer(buffer, temp_data, strlen( temp_data ) );
+	append_to_buffer(buffer, "\033[K", 3 ); // clear everything past cursor to end of line
+	//append_to_buffer(buffer, temp_data, strlen( temp_data ) );
+//	append_to_buffer(buffer, "\033[K", 3 );
+//	write( STDOUT_FILENO, temp_data, strlen( temp_data ) );
+	int len = line_buff->dcount - c->x_offset;
+	if( len < 0 ) 
+		len = 0;
+	
+	if( file_tree_toggle == true )
+	 if( len > window->cols - ( line_nums + 1) - FILE_TREE_WIDTH )
+		len = window->cols - ( line_nums + 1 ) - FILE_TREE_WIDTH;
+
+	if( file_tree_toggle == false )
+		if( len > window->cols - ( line_nums + 1) )
+			len = window->cols - ( line_nums + 1 );
+	
+	if( is_c_file  && syntax )
+		syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
+	else
+		append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
+
+	append_to_buffer(buffer, "\e[?25h",6); // show cursor	
+	write( STDOUT_FILENO, buffer->contents, buffer->count );
+	free( temp_data );
+	free( buffer->contents );
+	free( buffer );
+	return;
+}
+
+
 void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name )
 {
 	if( !toggle_line_nums )
@@ -122,12 +171,14 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 	editorRefreshScreen();
 	Buff * buffer = init_buffer();
 	Line_data * temp = lines->list_of_lines[c->y_offset];
+
 	bool is_c_file = false;
-	
 	if( file_name != NULL )
 		if( strstr( file_name, ".c" ) != NULL )
 			is_c_file = true;
-
+	
+	append_to_buffer(buffer, "\e[?25L",6); // show cursor	
+	//write( STDOUT_FILENO, buffer->contents, buffer->count );
 	for( int y = 0; y < window->rows - 1; y++ )
 	{	
 		if( file_tree_toggle == true )

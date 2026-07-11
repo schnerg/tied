@@ -60,6 +60,34 @@ void update( Editor * e )
 }
 
 
+void render_2( Editor * e )
+{
+	update_cursor( &e->cursor, e->line_buff );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	print_cursor( &e->cursor, e->mode );
+	return;
+}
+
+
+void render_3( Editor * e )
+{
+	update( e );
+	update_cursor( &e->cursor, e->line_buff );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
+
+ 	update_display_line( e->line_buff, &e->cursor, &e->window, e->line_nums, e->file_name );
+	
+	print_mode( &e->window, e->mode, e->debug_message );
+	if( file_tree_toggle && e->mode == FLTREE )
+		print_cursor( &e->tree.cursor, e->mode );
+	else
+		print_cursor( &e->cursor, e->mode );
+	return;
+}
+
+
+
 void render( Editor * e )
 {
 	update( e );
@@ -160,6 +188,7 @@ i32 create_file( Editor * e, File_tree * tree, Window * window )
 
 void insert_char_to_buff( Editor * e, char c )
 {
+	bool update_screen = false; 
 	e->can_redo = false;
 	e->saved = false;
 	Buff * temp = e->line_buff;
@@ -178,18 +207,21 @@ void insert_char_to_buff( Editor * e, char c )
 		temp->contents[i++] = c;
 		c = old;
 	}
-
-
 	e->cursor.index++;
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	if( e->cursor.rx >= e->window.cols  - 1 )
+	{
 		e->cursor.x_offset += e->window.cols / 2 ;
-	
+		update_screen = true;
+	}	
 	strcpy( e->debug_message, "" );
 	update_line_buffer_td( temp );
 	e->cursor.last_index = e->cursor.index;
 	e->cursor.last_x_offset= e->cursor.x_offset;
-	render(e);
+	if( update_screen )
+		render( e );
+	else
+		render_3(e);
 	return;
 }
 
@@ -229,6 +261,7 @@ void remove_line( Editor * e )
 
 void backspace( Editor * e )
 {
+	bool update_screen = false;
 	if( e->cursor.index > 0 )
 	{
 		e->can_redo = false;
@@ -267,9 +300,13 @@ void backspace( Editor * e )
 			e->cursor.x_offset += shift;
 		}
 		strcpy( e->debug_message, "" );
+		update_screen = true;
 	}
 	update_line_buffer_td( e->line_buff );
-	render( e );
+	if( update_screen )
+		render( e );
+	else
+		render_3( e );
 	return;
 }
 
@@ -342,6 +379,7 @@ void move_cursor_up( Editor * e )
 {
 	if( e->cursor.y_index > 0 )
 	{
+		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
  			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
@@ -351,11 +389,18 @@ void move_cursor_up( Editor * e )
 		e->cursor.y_index--;
 		
 		if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
+		{
+			update_screen = true;
 			e->cursor.y_offset--;
+		}
 		e->cursor.last_y_offset = e->cursor.y_offset;
 
 		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
-		render( e );
+		
+		if( update_screen )
+			render( e );
+		else
+			render_2( e );
 	}
 	return;
 }
@@ -365,6 +410,7 @@ void move_cursor_down( Editor * e )
 {
 	if( e->cursor.y_index < e->lines.count - 1 )
 	{
+		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
  			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
@@ -374,11 +420,17 @@ void move_cursor_down( Editor * e )
 		e->cursor.y_index++;
 
 		if( e->cursor.y_index - e->cursor.y_offset == e->window.rows -1 )	
+		{
 			e->cursor.y_offset++;
+			update_screen = true;
+		}
 		e->cursor.last_y_offset = e->cursor.y_offset;
 		
 		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
-		render( e );
+		if( update_screen )
+			render( e );
+		else
+			render_2( e );
 	}
 	return;
 }
@@ -388,6 +440,7 @@ void move_cursor_left( Editor * e )
 {
 	if( e->cursor.index > 0 )
 	{
+		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
  			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
@@ -399,14 +452,20 @@ void move_cursor_left( Editor * e )
 		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 
 		if( e->cursor.rx <= ( e->line_nums + 1 ) && e->cursor.x_offset > 0 )
+		{
 			e->cursor.x_offset -= e->window.cols - ( e->line_nums + 1 ); 
+			update_screen = true;
+		}
 
 		if( e->cursor.x_offset < 0 )
 			e->cursor.x_offset = 0;
 		
 		e->cursor.last_index = e->cursor.index;
 		e->cursor.last_x_offset = e->cursor.x_offset;
-		render(e);
+		if( update_screen )
+			render(e);
+		else
+			render_2( e );
 	}
 	return;
 }
@@ -416,6 +475,7 @@ void move_cursor_right( Editor * e )
 {
 	if( e->cursor.index < e->line_buff->count )
 	{
+		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
  			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
@@ -427,11 +487,16 @@ void move_cursor_right( Editor * e )
 		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 		int shift = ( e->window.cols - ( e->cursor.index - e->cursor.x_offset) ) + 1;
 		if( e->cursor.rx >= e->window.cols  - 1 )
+		{
 			e->cursor.x_offset += shift;
-			//e->cursor.x_offset += e->window.cols - ( e->line_nums + 1 ); 
+			update_screen = true;
+		}
 		e->cursor.last_index = e->cursor.index;
 		e->cursor.last_x_offset = e->cursor.x_offset;
-		render(e);
+		if( update_screen )
+			render(e);
+		else
+			render_2( e );
 	}
 	return;
 }
@@ -516,7 +581,6 @@ void events_insert( Editor * e )
 		{
 			if( isprint( c ) || c== '\t' )
 				insert_char_to_buff( e, c );
-			//render(e);
 		}break;
 	}
 	return;
@@ -828,6 +892,7 @@ open_file:
 				if( e->saved == false )
 				{
 					strcpy( e->debug_message, "FILE NOT SAVED!");
+					free( temp_data );
 					render( e );
 					break;
 				}
