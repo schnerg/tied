@@ -12,6 +12,7 @@
 
 #ifdef _WIN32
 	#include <direct.h>
+	#include <windows.h>
 	#define getcwd _getcwd
 #else
 	#include <unistd.h>
@@ -32,6 +33,7 @@ typedef struct
 }File_tree;
 
 
+bool is_directory( const char * file_name );
 void str_to_lower( char * str );
 void refresh_file_tree( File_tree * tree );
 void change_dir_at_point_of_cursor( File_tree * tree, char * debug_message );

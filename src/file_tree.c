@@ -7,6 +7,22 @@ void sort_directory( Line_data * head, bool is_root );
 Line_data * init_file();
 
 
+bool is_directory( const char * file_name )
+{
+#ifdef _WIN32
+	DWORD attributes = GetFileAttributesA( file_name );	
+	if( attributes == INVALID_FILE_ATTRIBUTES )
+		return false;
+	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+#elif __linux__
+	struct stat file_stat;
+	stat( file_name, &file_stat );
+	if( S_ISDIR( file_stat.st_mode ) )
+		return true;
+	return false;
+#endif
+}
+
 void adjust_cursor_offset( File_tree * tree, i32 rows )
 {
 	if( ( tree->cursor.y_index - tree->cursor.y_offset ) > rows - 2 || tree->cursor.y_index < tree->cursor.y_offset || tree->cursor.y_index + tree->cursor.y_offset > tree->lines.expanded_count )
@@ -87,7 +103,6 @@ i32 read_directory( File_tree * tree )
 {
 	DIR * directory;
 	struct dirent * entry;
-	struct stat file_stat;
 	i32 len = strlen( tree->lines.list_of_lines[tree->cursor.y_index]->to_display ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) + 2;
 	char * buff = calloc( len, sizeof( char ) );
 	snprintf( buff, len, "%s/%s", tree->lines.list_of_lines[tree->cursor.y_index]->to_display, tree->lines.list_of_lines[tree->cursor.y_index]->data );
@@ -141,10 +156,17 @@ i32 read_directory( File_tree * tree )
 		new_len = strlen( buff ) + strlen( entry->d_name) + 2;
 		temp_data = calloc( new_len, sizeof( char ) );
 		snprintf( temp_data, new_len, "%s/%s", buff, entry->d_name );
+
+		if( is_directory( temp_data ) )
+			temp->is_dir = true;	
+		free( temp_data );
+		
+/*j
 		stat( temp_data, &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;	
 		free( temp_data );
+	*/	
 		temp->next = init_file();
 		to_be_delete = temp;
 		temp = temp->next;
@@ -380,7 +402,6 @@ void read_working_dir( File_tree * tree )
 	//resize_list( &tree->lines );
 	DIR * directory;
 	struct dirent * entry;
-	struct stat file_stat;
 	directory = opendir( tree->working_directory );
 	if( directory == NULL )
 	{
@@ -423,10 +444,16 @@ void read_working_dir( File_tree * tree )
 		temp_data = calloc( new_len, sizeof( char ) );
 		snprintf( temp_data, new_len , "%s/%s", tree->working_directory, entry->d_name );
 		
+		if( is_directory( temp_data ) )
+			temp->is_dir = true;	
+		free( temp_data );
+		/*	
 		stat( temp_data , &file_stat );
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;
 		free( temp_data );
+		*/
+		
 		temp->next = init_file();
 		to_be_delete = temp;
 		temp = temp->next;
@@ -474,7 +501,6 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 {
 	DIR * directory;
 	struct dirent * entry;
-	struct stat file_stat;
 	directory = opendir( dir );
 	if( directory == NULL )
 	{
@@ -535,10 +561,17 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 			new_len = strlen( new->to_display ) +  strlen( new->data ) + 2;
 			temp_data = calloc( new_len, sizeof( char ) );
 			snprintf( temp_data, new_len, "%s/%s", new->to_display, new->data );
+			
+			if( is_directory( temp_data) )
+				new->is_dir = true;
+			free( temp_data );
+
+			/*j
 			stat( temp_data, &file_stat );
 			if( S_ISDIR( file_stat.st_mode ) )
 				new->is_dir = true;
 			free( temp_data );
+			*/
 			if( root )
 			{
 				next = head->next;

@@ -27,22 +27,7 @@ i32 file_permissions( const char * file_name )
 
 
 
-bool is_directory( const char * file_name )
-{
 
-#ifdef _WIN32
-	DWORD attributes = GetFileAttributesA( file_name );	
-	if( attributes == INVALID_FILE_ATTRIBUTES )
-		return false;
-	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
-#elif __linux__
-	struct stat file_stat;
-	stat( file_name, &file_stat );
-	if( S_ISDIR( file_stat.st_mode ) )
-		return true;
-	return false;
-#endif
-}
 
 
 char * get_file_name( File_tree * tree, Window * window, char * debug_message )
