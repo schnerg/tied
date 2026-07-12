@@ -185,13 +185,12 @@ void expand_tree_at_point_of_cursor( File_tree * tree, char * debug_message)
 
 
 #ifdef _WIN32
-	else if( strcmp( tree->working_directory, "\\") != 0 )
+	else if( strcmp( tree->working_directory, "\\" ) != 0 || strcmp( tree->working_directory, "/") != 0 )
 	{
 		i32 i = strlen( tree->working_directory );
-		while( tree->working_directory[i] != '\\' )
+		while( tree->working_directory[i] != '\\'  && tree->working_directory[i] != '/' )
 			i--;
-
-		if( i > 0 && tree->working_directory[i-1] != ':' )
+		if( (tree->working_directory[i] != '/' || tree->working_directory[i-1] != ':') &&  i > 0 )
 			tree->working_directory[i] = '\0';
 		else
 			tree->working_directory[i+1] = '\0';

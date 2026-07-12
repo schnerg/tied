@@ -35,7 +35,7 @@ void init( Editor * e )
 	strcpy( e->debug_message, "" );
 	e->done = false;
 	e->tabs = 0;
-	i32 i = load_file( &e->lines, NULL, e->file_name, e->debug_message );
+	i32 i = load_file( &e->lines, NULL, e->files.file_name, e->debug_message );
 	if( i == 1 )
 		strcpy( e->debug_message, ": new buffer created" );
 	init_cursor( &e->cursor );
@@ -45,7 +45,7 @@ void init( Editor * e )
 	update( e );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 
-	if( file_tree_toggle && e->file_name == NULL )
+	if( file_tree_toggle && e->files.file_name == NULL )
 		e->mode = FLTREE;
 	return;	
 }
@@ -76,7 +76,7 @@ void render_3( Editor * e )
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
 
- 	update_display_line( e->line_buff, &e->cursor, &e->window, e->line_nums, e->file_name );
+ 	update_display_line( e->line_buff, &e->cursor, &e->window, e->line_nums, e->files.file_name );
 	
 	print_mode( &e->window, e->mode, e->debug_message );
 	if( file_tree_toggle && e->mode == FLTREE )
@@ -94,7 +94,7 @@ void render( Editor * e )
 	update_cursor( &e->cursor, e->line_buff );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
- 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->file_name );
+ 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->files.file_name );
 	print_mode( &e->window, e->mode, e->debug_message );
 	if( file_tree_toggle && e->mode == FLTREE )
 		print_cursor( &e->tree.cursor, e->mode );
@@ -162,9 +162,9 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 			{
 				//e->mode = NORMAL;
 				free_file( &e->lines );	
-				free( e->file_name );
-				e->file_name = NULL;
-				load_file( &e->lines, NULL, e->file_name, e->debug_message );
+				free( e->files.file_name );
+				e->files.file_name = NULL;
+				load_file( &e->lines, NULL, e->files.file_name, e->debug_message );
 				init_cursor( &e->cursor );
 				update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
 				free_undo_redo_stacks( e );
@@ -707,8 +707,7 @@ void events_normal( Editor * e )
 		case CTRL_KEY( 's' ):
 		{
 			//write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-
-			if( save_file( e->file_name, &e->lines, &e->tree, &e->window, e->debug_message ) == 0 )
+			if( save_file( &e->files, &e->lines, &e->tree, &e->window, e->debug_message ) == 0 )
 			{
 				strcpy( e->debug_message, ": file saved" );
 				e->saved = true;
@@ -899,10 +898,10 @@ void events_file_tree( Editor * e )
 				temp_data = calloc( new_len, sizeof( char ) );
 				snprintf( temp_data, new_len, "%s/%s", e->tree.lines.list_of_lines[e->tree.cursor.y_index]->to_display, e->tree.lines.list_of_lines[e->tree.cursor.y_index]->data );
 
-				if( e->file_name == NULL )
+				if( e->files.file_name == NULL )
 					goto open_file;
 
-				else if( strcmp( e->file_name, temp_data ) != 0 )
+				else if( strcmp( e->files.file_name, temp_data ) != 0 )
 					goto open_file;
 				else 
 				{
@@ -932,9 +931,9 @@ open_file:
 						if( load_file( &e->lines, file, temp_data, e->debug_message ) != 1 )
 						{
 							e->mode = NORMAL;
-							if( e->file_name != NULL )
-								free( e->file_name );
-							e->file_name = temp_data;
+							if( e->files.file_name != NULL )
+								free( e->files.file_name );
+							e->files.file_name = temp_data;
 							init_cursor( &e->cursor );
 							update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
 							free_undo_redo_stacks( e );
@@ -958,7 +957,7 @@ open_file:
 		}break;
 		case CTRL_KEY( 'd' ):
 		{
-			if( delete_file( e, &e->tree, &e->window, e->file_name ) != 0 )
+			if( delete_file( e, &e->tree, &e->window, e->files.file_name ) != 0 )
 				strcpy( e->debug_message, "Could not Delete file or directory!" );
 			render( e );
 			print_cursor( &e->tree.cursor, e->mode );
@@ -1021,7 +1020,7 @@ void quit( Editor * e )
 		free( prev );
 	}
 	free( e->lines.list_of_lines );
-	free( e->file_name );
+	free( e->files.file_name );
 	// free file tree
 	free_file_tree( e->tree.lines.head, e->tree.lines.count, 0 );
 	free( e->tree.lines.head );

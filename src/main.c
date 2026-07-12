@@ -4,14 +4,14 @@
 int main( int argc, char * argv[] )
 {
 	Editor e;
-	e.file_name = NULL;
+	e.files.file_name = NULL;
 	if( argc > 1 )
 	{
 		if( !is_directory( argv[1] ) )
 		{
 			int length = strlen( argv[1] ) + 1;
-			e.file_name = calloc( length, sizeof( char ) );
-			strcpy( e.file_name, argv[1] );	
+			e.files.file_name = calloc( length, sizeof( char ) );
+			strcpy( e.files.file_name, argv[1] );	
 		}
 		else if( is_directory( argv[1] ) )
 		{

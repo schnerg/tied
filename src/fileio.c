@@ -10,53 +10,72 @@ bool does_file_exist( File_tree * tree, char * file_name )
 	return false;
 }
 
+// -1 = file does no exist 
 // 0 = no permissions
 // 1 = read permissions
 // 2 = read and write permissions
 i32 file_permissions( const char * file_name )
 {
-	if( access( file_name, F_OK ) == -1 )
+	if( access( file_name, 0 ) == -1 ) // does_file_exist
 		return -1;
-	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == 0 )
+	if( access( file_name, 6 ) == 0 ) // read and write permission
 		return 2;
-	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == -1 )
+	if( access( file_name, 4 ) == 0 ) // just read
 		return 1;
 	return 0;
 }
 
 
-bool is_directory( char * file_name )
+
+bool is_directory( const char * file_name )
 {
+
+#ifdef _WIN32
+	DWORD attributes = GetFileAttributesA( file_name );	
+	if( attributes == INVALID_FILE_ATTRIBUTES )
+		return false;
+	return ( attributes & FILE_ATTRIBUTE_DIRECTORY ) != 0;
+#elif __linux__
 	struct stat file_stat;
 	stat( file_name, &file_stat );
 	if( S_ISDIR( file_stat.st_mode ) )
 		return true;
 	return false;
+#endif
 }
 
 
-char * get_file_name( i32 size, File_tree * tree, Window * window, char * debug_message )
+char * get_file_name( File_tree * tree, Window * window, char * debug_message )
 {
-	//write prompt
 	
-	char * buff = calloc( size, sizeof( char ) );
-	printf( "\x1b[%d;%dH", window->rows, 13 );
-	//write( 0, buff, strlen( buff ) );
-	printf( "\33[J" );
-	//write( 0, buff, strlen( buff ) );
-	printf( "Save file as: ");
-//	write( 0, buff, strlen( buff ) );
+	i32 size = 2;
+	char * temp = calloc( size, sizeof( char ) );
+	
 
+	i32 new_size = int_to_str_size( window->rows ) + int_to_str_size( 13 ) + strlen("\x1b[;H") + 1; 
+	char * temp_data = calloc( new_size, sizeof( char ) );	
+	snprintf( temp_data, new_size, "\x1b[%d;%dH", window->rows, 13 );
+	write( 0, temp_data, strlen( temp_data ) );
+	free( temp_data );
+	write( 0, "\33[J", 3 );
+	
+	new_size = strlen( "Save file as: " ) + 1;
+	temp_data = calloc( new_size, sizeof( char ) );	
+	snprintf( temp_data, new_size ,"Save file as: " );
+	write( 0, temp_data, strlen( temp_data) );
+	free( temp_data );
+
+	//write prompt
 	//read input
 	int i = 0;	
 	char ch; 
 	char back = '\b';
-	while( ( ch = getch( window ) ) != 13 && i < size )	
+	while( ( ch = getch( window ) ) != 13 )	
 	{
 		if( ch == 27 ) // escape 
 		{
 			strcpy( debug_message, " File not saved" );
-			free(buff);
+			free( temp );
 			return NULL;
 		}
 		if ( ch == 127 )// backspace
@@ -72,18 +91,23 @@ char * get_file_name( i32 size, File_tree * tree, Window * window, char * debug_
 		else if( isprint( ch ) && !strchr( "<>:\"/\\|?", ch ) )
 		{
 			write(STDOUT_FILENO, &ch, 1);
-			buff[i] = ch;
+			if( i >= size - 1 )
+			{
+				size++;
+				temp = realloc( temp, size * sizeof( char ) );
+			}
+			temp[i] = ch;
 			i++;
 		}
 	}
-	buff[i] = '\0';	
-	if( does_file_exist( tree, buff ) )
+	temp[i] = '\0';	
+	if( does_file_exist( tree, temp ) )
 	{
 		strcpy( debug_message, "\33[41mFILE ALREADY EXISTS!\33[0m");
-		free(buff);
+		free( temp );
 		return NULL;
 	}
-	return buff;
+	return temp;
 }
 
 
@@ -106,13 +130,20 @@ void free_file( Lines_data * lines)
 }
 
 
-int save_file( char * file_name, Lines_data * lines, File_tree * tree, Window * window, char * debug_message )
+int save_file( Files * file, Lines_data * lines, File_tree * tree, Window * window, char * debug_message )
 {
-	if( file_name == NULL )
-		if( (file_name = get_file_name( 1024, tree, window, debug_message ) ) == NULL )
+	if( file->file_name == NULL )
+		if( (file->file_name = get_file_name( tree, window, debug_message ) ) == NULL )
 			return 1;
+	/*
+	if( is_directory( file_name ) )
+	{
+		free( file_name );
+		return 1;
+	}
+*/
 	errno = 0;
-	FILE * fp = fopen( file_name, "w" );
+	FILE * fp = fopen( file->file_name, "w" );
 	if( fp == NULL )
 	{ 
 		strcpy( debug_message, "cannot save file, permission denied");

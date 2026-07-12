@@ -28,7 +28,6 @@ char * get_input( const char * message, Window * window )
 	//write prompt
 	i32 size = 2;
 	char * temp = calloc( size, sizeof( char ) );
-	
 	i32 new_size = int_to_str_size( window->rows ) + int_to_str_size( 13 ) + strlen("\x1b[;H") + 1; 
 	char * temp_data = calloc( new_size, sizeof( char ) );	
 	snprintf( temp_data, new_size, "\x1b[%d;%dH", window->rows, 13 );

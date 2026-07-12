@@ -44,6 +44,7 @@ typedef struct
 	Lines_data lines;	
 
 	Files files;
+	//char * file_name;
 
 	int tabs;
 	int tabs_space;
@@ -51,7 +52,6 @@ typedef struct
 	//editor settings
 	bool saved;
 	char debug_message[40];
-	char * file_name;
 //window stuffs
 	bool done;
 	Window window;
