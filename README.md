@@ -45,6 +45,7 @@ Filetree mode:
 - ctrl + c : change directory to directory at cursor 
 - ctrl + r : refresh file tree
 - ctrl + d : delete a file or directory
+- ctrl + a : add file!
 - Enter    : switch to file or expand directory
  
 

@@ -5,10 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
+
+
+#ifdef _WIN32
+	#include <direct.h>
+	#define make_directory( path ) _mkdir(path)
+#elif __linux__
+	#include <sys/stat.h>
+	#include <sys/types.h>
+	#define make_directory( path ) mkdir( path, S_IRWXU )// might need to change file permissions! :(
+#endif
+
+
 
 #include "global.h"
 #include "py_list.h"

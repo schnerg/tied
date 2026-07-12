@@ -114,10 +114,8 @@ bool _delete_file( const char * file_name )
 
 i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name )
 {
-	
 	i32 result = 0;
 	char * input = NULL;
-	
 	i32 len = strlen( tree->lines.list_of_lines[tree->cursor.y_index]->to_display ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) + 2;
 	char * temp_data = NULL;
 
@@ -126,7 +124,7 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 	
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
 	{
-		if( ( input = get_input( "This is a directory type 'yes' to delete: ", window ) ) == NULL ) 
+		if( ( input = get_input( NULL, "This is a directory type 'yes' to delete: ", window ) ) == NULL ) 
 			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "yes") == 0 )
@@ -136,7 +134,7 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 	}
 	else
 	{
-		if( ( input = get_input(  "Delete file? N/y: ", window ) ) == NULL ) 
+		if( ( input = get_input(  NULL, "Delete file? N/y: ", window ) ) == NULL ) 
 			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
@@ -153,7 +151,7 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 			goto done;
 		if( strcmp( temp_data, file_name ) == 0 )
 		{
-			if( ( input = get_input( "File loaded, delete buffer? N/y: ", window ) ) == NULL ) 
+			if( ( input = get_input( NULL,"File loaded, delete buffer? N/y: ", window ) ) == NULL ) 
 				goto done;
 			str_to_lower( input );
 			if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
@@ -184,20 +182,118 @@ done:
 
 
 
-/*
-i32 create_file( Editor * e, File_tree * tree, Window * window )
+
+i32 make_directory_recursive( const char * path )
 {
-	get_input()
-	#ifdef _WIN32
+	char * _path = strdup( path );
+	char * p = _path;
+	int result = -1;
+	char temp = 0;
+#ifdef _WIN32
+	for( p = _path + 3; *p != '\0'; p++ )
+#elif __linux__
+	for( p = _path + 1; *p != '\0'; p++ )
+#endif
+	{
+		errno = 0;
+		if( *p == '/' || *p == '\\' )
+		{
+			temp = *p;
+			*p = '\0';
+			if( make_directory( _path ) != 0)
+			{
+				if( errno != EEXIST )
+				goto done;
+			}
+			*p = temp;
+		}
+	}
+	errno = 0;
+	if( make_directory( _path ) != 0 )
+		if( errno != EEXIST )
+			goto done;
+	result = 0;
+done:
+	free( _path );
+	return result;
+}
 
-	#elif
 
-	#endif
-
+int _create_file(  char * file )
+{
+	FILE * fp = NULL;
+	fp = fopen( file, "w");
+	if( fp == NULL )
+		return -1; 
+	fclose( fp );
 	return 0;
 }
 
-*/
+
+i32 create_file( Editor * e, File_tree * tree, Window * window )
+{
+	// get file name and path
+	i32 new_len = strlen( tree->working_directory ) + 1;
+	char * working_directory = calloc( new_len, sizeof(char ) );
+	snprintf( working_directory, new_len, "%s", tree->working_directory );
+	char * input = NULL;
+	if( ( input = get_input2( working_directory , "", window ) ) == NULL ) 
+		return 1;
+	
+	new_len = strlen( input );
+	char * temp = strdup(input);
+	// checking if directory
+	bool is_dir = false;
+	if( input[new_len-1] == '/' || input[new_len-1] == '\\' )
+		is_dir = true;
+	
+	if( is_dir )
+	{
+		if( make_directory_recursive( input ) != -1 )
+		{
+			strcpy( e->debug_message, "Directory created successfuly!" ); 
+			refresh_file_tree( tree );
+			goto done;
+		}
+		else
+		{
+
+		}
+	}
+	else
+	{
+		i32 i = strlen( input );
+		while( input[i] != '\\' && input[i] != '/' )
+			i--;
+		input[i] = '\0';
+		if( make_directory_recursive( input ) != -1 )
+		{
+			if( _create_file( temp ) != -1 )
+			{
+				strcpy( e->debug_message, "File created successfuly!" ); 
+				refresh_file_tree( tree );
+				goto done;
+			}
+			else
+			{
+				strcpy( e->debug_message, "Could not create file!" ); 
+				goto done;
+			}
+		}
+		else
+		{
+			strcpy( e->debug_message, "Could not create directory!" ); 
+			goto done;
+		}
+	}
+	done:
+	free( temp );
+	free( input );
+	return 0;
+}
+
+
+
 void insert_char_to_buff( Editor * e, char c )
 {
 	bool update_screen = false; 
@@ -955,6 +1051,14 @@ open_file:
 			render( e );
 			print_cursor( &e->tree.cursor, e->mode );
 		}break;
+		
+		case CTRL_KEY( 'a' ):
+		{
+			create_file( e, &e->tree, &e->window );
+			render( e );
+			print_cursor( &e->tree.cursor, e->mode );
+		}break;
+
 		case CTRL_KEY( 'd' ):
 		{
 			if( delete_file( e, &e->tree, &e->window, e->files.file_name ) != 0 )
@@ -1006,7 +1110,6 @@ void events( Editor * e )
 
 void quit( Editor * e )
 {
-	disable_raw_mode( &e->window );
 	// free files
 	Line_data * prev = NULL;
 	Line_data * temp = e->lines.head;
@@ -1034,5 +1137,6 @@ void quit( Editor * e )
 	if( e->line_buff->to_display != NULL )
 		free( e->line_buff->to_display );
 	free( e->line_buff );
+	disable_raw_mode( &e->window );
 	return;
 }
