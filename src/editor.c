@@ -116,7 +116,7 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 {
 	
 	i32 result = 0;
-	char input[1024];
+	char * input = NULL;
 	
 	i32 len = strlen( tree->lines.list_of_lines[tree->cursor.y_index]->to_display ) + strlen( tree->lines.list_of_lines[tree->cursor.y_index]->data ) + 2;
 	char * temp_data = NULL;
@@ -126,7 +126,7 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 	
 	if( tree->lines.list_of_lines[tree->cursor.y_index]->is_dir )
 	{
-		if( get_input( input, "This is a directory type 'yes' to delete: ", 1024, window ) == 1 ) 
+		if( ( input = get_input( "This is a directory type 'yes' to delete: ", window ) ) == NULL ) 
 			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "yes") == 0 )
@@ -136,25 +136,29 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 	}
 	else
 	{
-		if( get_input( input, "Delete file? N/y: ", 1024, window ) == 1 ) 
+		if( ( input = get_input(  "Delete file? N/y: ", window ) ) == NULL ) 
 			goto done;
 		str_to_lower( input );
 		if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
 			goto done;
-		if( strcmp( input, "y") == 0 )
+		else if( strcmp( input, "y") == 0 )
 			result = _delete_file( temp_data );
 	}
 	if( result == 0 )
 	{
+		free( input );
+		input = NULL;
 		refresh_file_tree( tree );
+		if( file_name == NULL)
+			goto done;
 		if( strcmp( temp_data, file_name ) == 0 )
 		{
-			if( get_input( input, "File loaded, delete buffer? N/y: ", 1024, window ) == 1 ) 
+			if( ( input = get_input( "File loaded, delete buffer? N/y: ", window ) ) == NULL ) 
 				goto done;
 			str_to_lower( input );
 			if( strcmp( input, "") == 0 || strcmp( input, "n") == 0 )
 				goto done;
-			if( strcmp( input, "y") == 0 )
+			else if( strcmp( input, "y") == 0 )
 			{
 				//e->mode = NORMAL;
 				free_file( &e->lines );	
@@ -173,19 +177,27 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 	}
 done:
 	free( temp_data );
+	if( input != NULL )
+		free( input );
 	return result;
 }
+
 
 
 /*
 i32 create_file( Editor * e, File_tree * tree, Window * window )
 {
+	get_input()
+	#ifdef _WIN32
+
+	#elif
+
+	#endif
 
 	return 0;
 }
+
 */
-
-
 void insert_char_to_buff( Editor * e, char c )
 {
 	bool update_screen = false; 
@@ -995,6 +1007,7 @@ void events( Editor * e )
 
 void quit( Editor * e )
 {
+	disable_raw_mode( &e->window );
 	// free files
 	Line_data * prev = NULL;
 	Line_data * temp = e->lines.head;
@@ -1014,18 +1027,13 @@ void quit( Editor * e )
 	free( e->tree.lines.head );
 	free( e->tree.lines.list_of_lines );
 	free( e->tree.working_directory );
-
 	//clear screen!
 	write( STDOUT_FILENO, "\x1b[2J", 4 );
 	write( STDOUT_FILENO, "\x1b[H", 3 );
-
 	free_undo_redo_stacks( e );
-
 	free( e->line_buff->contents );
 	if( e->line_buff->to_display != NULL )
 		free( e->line_buff->to_display );
 	free( e->line_buff );
-	
-	disable_raw_mode( &e->window );
 	return;
 }

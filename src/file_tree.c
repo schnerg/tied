@@ -1,6 +1,6 @@
 #include "include/file_tree.h"
 
-//Devine fucking intelect! :D
+// I think I might be stupid. :(
 void reset_file_tree( File_tree * tree );
 void free_file_tree( Line_data * head, i32 count, i32 iteration );
 void sort_directory( Line_data * head, bool is_root );
@@ -380,21 +380,23 @@ void read_working_dir( File_tree * tree )
 	{ 
 		if( strcmp( entry->d_name, ".") == 0 )
 			continue;	
+
 		tree->lines.count++;
 		temp->prev = prev;
 		// save file name;	
 		new_len = strlen( entry->d_name ) + 1;
-		temp_data = realloc( temp->data, new_len * sizeof( char ) );
+		temp_data = calloc( new_len, sizeof( char ) );
 		if( temp_data != NULL )
 		{
 			temp->data = temp_data;
 			strcpy( temp->data, entry->d_name );
-			//temp->data[i] = '\0';
 			temp->count = new_len - 1 ;
-		}		
+		}			
 		// save working directory
 		new_len = strlen( tree->working_directory ) + 1;
-		temp_data = realloc( temp->to_display, new_len * sizeof( char ) );
+		temp_data = NULL;
+		temp_data = calloc( new_len ,sizeof( char ) );
+		
 		if( temp_data != NULL )
 		{
 			temp->to_display = temp_data;
@@ -408,8 +410,6 @@ void read_working_dir( File_tree * tree )
 		if( S_ISDIR( file_stat.st_mode ) )
 			temp->is_dir = true;
 		free( temp_data );
-		//prev = temp;	
-		//init_line( temp );
 		temp->next = init_file();
 		to_be_delete = temp;
 		temp = temp->next;
@@ -439,6 +439,7 @@ void free_file_tree( Line_data * head, i32 count, i32 iteration )
 		temp = head->head;	
 	Line_data * next = temp;
 	for( int i = 0; i < count; i++)
+	//while( temp != NULL )
 	{
 		if( temp->is_dir )
 			free_file_tree( temp, temp->dcount, 1 );
@@ -497,7 +498,6 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 		}
 		if( new )
 		{	
-
 			new_count++;
 			Line_data * new = init_file();
 			new_len = strlen( entry->d_name ) + 1;
@@ -508,17 +508,20 @@ i32 check_dir_for_new_items( Line_data * head, const char * dir, const bool root
 				strcpy( new->data, entry->d_name );
 				new->count = new_len - 1;
 			}
-
 			new_len = strlen( dir ) + 1;
 			temp_data = calloc( new_len, sizeof( char ) );
 			if( temp_data != NULL )
+			{
+				new->to_display = temp_data;
 				strcpy( new->to_display, dir );
-			
+			}
 			new_len = strlen( new->to_display ) +  strlen( new->data ) + 2;
+			temp_data = calloc( new_len, sizeof( char ) );
 			snprintf( temp_data, new_len, "%s/%s", new->to_display, new->data );
 			stat( temp_data, &file_stat );
 			if( S_ISDIR( file_stat.st_mode ) )
 				new->is_dir = true;
+			free( temp_data );
 			if( root )
 			{
 				next = head->next;
@@ -558,6 +561,8 @@ i32 delete_files_from_chain( Line_data * head, const bool root )
 			current = current->next;
 			if( temp->is_dir )
 				free_file_tree( temp, temp->dcount, 1 );
+			free( temp->data );
+			free( temp->to_display );
 			free( temp );
 			if( first_iteration )
 			{
@@ -568,11 +573,12 @@ i32 delete_files_from_chain( Line_data * head, const bool root )
 			}
 			else
 				last->next = current;	
-			last = current;
-			if( current != NULL )
-				current = current->next;
-			first_iteration = false;
-			continue;
+
+//			last = current;
+//			if( current != NULL )
+//				current = current->next;
+//			first_iteration = false;
+	//		continue;
 		}
 		first_iteration = false;
 		last = current;
@@ -619,8 +625,7 @@ i32 check_dir_for_deleted_items( Line_data * head, const char * dir, const bool 
 			if( strcmp( entry->d_name, "." ) == 0 || strcmp( entry->d_name, "..") == 0 )
 				continue;
 			temp = head->head;
-		}
-		
+		}	
 		while( temp != NULL )
 		{
 			if( strcmp( entry->d_name, temp->data ) == 0 )
@@ -654,6 +659,7 @@ void _refresh_file_tree( Line_data * head, i32 count, bool root )
 			len = strlen( temp->to_display ) + strlen( temp->data ) + 2;
 			temp_data = calloc( len, sizeof( char ) );
 			snprintf( temp_data, len, "%s/%s", temp->to_display, temp->data );
+			
 			temp->dcount -= check_dir_for_deleted_items( temp, temp_data, false );
 			temp->dcount += check_dir_for_new_items( temp, temp_data, false );
 			free( temp_data );

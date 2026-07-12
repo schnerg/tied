@@ -41,14 +41,16 @@ bool is_directory( char * file_name )
 char * get_file_name( i32 size, File_tree * tree, Window * window, char * debug_message )
 {
 	//write prompt
+	
 	char * buff = calloc( size, sizeof( char ) );
-	sprintf( buff, "\x1b[%d;%dH", window->rows, 13 );
-	write( 0, buff, strlen( buff ) );
-	sprintf( buff, "\33[J" );
-	write( 0, buff, strlen( buff ) );
-	sprintf( buff, "Save file as: ");
-	write( 0, buff, strlen( buff ) );
-//read input
+	printf( "\x1b[%d;%dH", window->rows, 13 );
+	//write( 0, buff, strlen( buff ) );
+	printf( "\33[J" );
+	//write( 0, buff, strlen( buff ) );
+	printf( "Save file as: ");
+//	write( 0, buff, strlen( buff ) );
+
+	//read input
 	int i = 0;	
 	char ch; 
 	char back = '\b';
