@@ -181,7 +181,24 @@ void expand_tree_at_point_of_cursor( File_tree * tree, char * debug_message)
 		tree->lines.list_of_lines[tree->cursor.y_index]->expanded = true;
 		update_file_tree_items( tree, &tree->lines );
 	}
-	
+
+
+
+#ifdef _WIN32
+	else if( strcmp( tree->working_directory, "\\") != 0 )
+	{
+		i32 i = strlen( tree->working_directory );
+		while( tree->working_directory[i] != '\\' )
+			i--;
+
+		if( i > 0 && tree->working_directory[i-1] != ':' )
+			tree->working_directory[i] = '\0';
+		else
+			tree->working_directory[i+1] = '\0';
+		reset_file_tree( tree );
+	}
+
+#elif __linux__
 	else if( strcmp( tree->working_directory, "/") != 0 )
 	{
 		i32 i = strlen( tree->working_directory );
@@ -193,6 +210,7 @@ void expand_tree_at_point_of_cursor( File_tree * tree, char * debug_message)
 			tree->working_directory[i+1] = '\0';
 		reset_file_tree( tree );
 	}
+#endif
 	return;
 }
 

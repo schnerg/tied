@@ -3,6 +3,13 @@
 
 #include <stdio.h>
 #include <unistd.h>
+
+	#ifdef _WIN32
+		#include <io.h>
+		#define access _access
+	#elif __linux__
+		#include <unistd.h>
+	#endif
 #include "data.h"
 #include "screen.h"
 #include "io.h"

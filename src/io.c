@@ -9,7 +9,7 @@ char getch( Window * window )
 		DWORD numread;
 		INPUT_RECORD input_record_buffer[2];
 		ReadConsoleInput( window->hstdin, input_record_buffer, 2, &numread );
-		for( int i = 0; i < numread; i++ )
+		for( long unsigned int i = 0; i < numread; i++ )
 			if( input_record_buffer[i].Event.KeyEvent.bKeyDown )
 			{
 				c = input_record_buffer[i].Event.KeyEvent.uChar.AsciiChar; 

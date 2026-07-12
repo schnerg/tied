@@ -15,8 +15,6 @@ bool does_file_exist( File_tree * tree, char * file_name )
 // 2 = read and write permissions
 i32 file_permissions( const char * file_name )
 {
-//	#ifdef _WIN32
-//	#elif __linux__
 	if( access( file_name, F_OK ) == -1 )
 		return -1;
 	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == 0 )
@@ -24,7 +22,6 @@ i32 file_permissions( const char * file_name )
 	if( access( file_name, R_OK ) == 0 && access( file_name, W_OK ) == -1 )
 		return 1;
 	return 0;
-//	#endif
 }
 
 
