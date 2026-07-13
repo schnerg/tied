@@ -81,7 +81,7 @@ void update_line_buffer_td( Buff * line_buff )
 	for( i = 0; i < line_buff->count; i++ )
 		if( line_buff->contents[i] == '\t' )
 			tabs++;
-// this line here 	
+	
 	line_buff->to_display = malloc( ( line_buff->count + ( tabs * ( TAB_STOP - 1 )  ) + 1 ) * sizeof( char ) );
 
 	if( line_buff->to_display == NULL )

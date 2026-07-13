@@ -139,6 +139,7 @@ void update_display_line( Buff * line_buff, Cursor * c, Window * window, int lin
 //	append_to_buffer(buffer, "\033[K", 3 );
 //	write( STDOUT_FILENO, temp_data, strlen( temp_data ) );
 	int len = line_buff->dcount - c->x_offset;
+	
 	if( len < 0 ) 
 		len = 0;
 	
@@ -149,6 +150,7 @@ void update_display_line( Buff * line_buff, Cursor * c, Window * window, int lin
 	if( file_tree_toggle == false )
 		if( len > window->cols - ( line_nums + 1) )
 			len = window->cols - ( line_nums + 1 );
+	
 	
 	if( is_c_file  && syntax )
 		syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
@@ -286,6 +288,8 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( file_tree_toggle == false )
 					if( len > window->cols - ( line_nums + 1) )
 						len = window->cols - ( line_nums + 1 );
+				if( len < 0 ) 
+					len = 0;
 			// syntax_highlighting 	
 				if( is_c_file  && syntax )
 					syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
@@ -306,7 +310,9 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( file_tree_toggle == false )
 					if( len > window->cols - ( line_nums + 1 ) )
 						len = window->cols - ( line_nums + 1 );
-			// syntax_highlighting 	
+				if( len < 0 ) 
+					len = 0;
+				// syntax_highlighting 	
 				if( is_c_file  && syntax )
 					syntax_highlighting( buffer, &temp->to_display[c->x_offset], len);
 				else	

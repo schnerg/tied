@@ -43,9 +43,9 @@ typedef struct
 lexer_t * init_lexer(char * data)
 {
 	lexer_t * lexer = calloc(1,sizeof(lexer_t));
-	lexer->i =0;
+	lexer->i = 0;
 	lexer->data = data;
-	lexer->c= lexer->data[lexer->i];
+	lexer->c = lexer->data[lexer->i];
 	return lexer;
 }
 void advance_lexer(lexer_t * lexer)
@@ -58,13 +58,13 @@ void advance_lexer(lexer_t * lexer)
 
 void get_next_word(lexer_t * lexer,char * buffer,const int len)
 {	
-	int i =0;
+	int i = 0;
 	buffer[i]	= lexer->c;
 	advance_lexer(lexer);
 	i++;
-	while(lexer->i<len)
+	while( lexer->i < len )
 	{
-		if(strchr(",.()+-/*=~%<>[];:", lexer->c) || isspace(lexer->c))
+		if(strchr( ",.()+-/*=~%<>[];:", lexer->c ) != NULL || isspace(lexer->c) )
 			break;
 		buffer[i] = lexer->c;
 		advance_lexer(lexer);
@@ -138,16 +138,16 @@ void get_string(lexer_t * lexer,char * buffer, const int len)
 void syntax_highlighting(Buff * buffer, char * str, const int len)
 {
 	lexer_t * lexer = init_lexer(str);
-	char * word = calloc( len, sizeof( char ) );
-	while(lexer->i < len )
+	char * word = calloc( len + 1, sizeof( char ) );
+	while( lexer->i < len )
 	{
-		if(isalpha(lexer->c))
+		if( isalpha(lexer->c) )
 		{
-			get_next_word(lexer,word,len);
-			append_proper(buffer,word);
+			get_next_word( lexer, word, len );
+			append_proper( buffer, word );
 			continue;
 		}	
-		if(isspace(lexer->c))
+		if( isspace(lexer->c) )
 		{
 			append_to_buffer(buffer,&lexer->c,1);
 			advance_lexer(lexer);
