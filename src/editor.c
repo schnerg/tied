@@ -345,13 +345,14 @@ void remove_line( Editor * e )
 	line_to_appended_to->next = next_line;
 	if( next_line != NULL )
 		next_line->prev = line_to_appended_to;
+
 	int size = line_to_appended_to->count + temp->count;
 
 	i32 i;
 	char * buff = calloc( size, sizeof( char ) );
 	for( i = 0; i < line_to_appended_to->count; i++ )
 		buff[i] = line_to_appended_to->data[i];
-	for( i32 j = 0; j < size; j++ )
+	for( i32 j = 0; j < temp->count; j++ )
 	{
 		buff[i] = temp->data[j];
 		i++;
@@ -365,6 +366,7 @@ void remove_line( Editor * e )
 	free( temp );
 	return;
 }
+
 
 
 void backspace( Editor * e )
@@ -399,7 +401,9 @@ void backspace( Editor * e )
 		e->cursor.last_index = e->cursor.index;	
  		push_del_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
 		write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+		
 		remove_line( e );
+		
 		update_list_of_lines( &e->lines );
 		e->cursor.y_index--;	
 		if( e->cursor.index - e->cursor.x_offset >= e->window.cols - 1)
