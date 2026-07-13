@@ -305,7 +305,7 @@ void insert_char_to_buff( Editor * e, char c )
 			e->line_buff->index = e->cursor.index;
 	e->line_buff->has_changed = true;
 
-	if( temp->count >= temp->copacity )
+	while( temp->count >= temp->copacity )
 		resize_buffer( temp );
 	char old;
 	int i = e->cursor.index;
