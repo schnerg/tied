@@ -29,7 +29,7 @@
 #include "fileio.h"
 #include "search.h"
 #include "io.h"
-#include "undo_redo.h"
+//#include "undo_redo.h"
 #include "syntax.h"
 #include "file_tree.h"
 
@@ -48,7 +48,9 @@ typedef struct
 	bool can_redo;	
 	//int mode;
 	MODE mode;
-	
+
+	char * clipboard;
+
 	Cursor cursor;
 //line stuff
 	Lines_data lines;	

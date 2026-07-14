@@ -7,6 +7,7 @@ This text editor is rubbish.
 This editor doesn't work with unicode.
 
 it has windows support! :D
+
 this editor works best on linux.
 
 
@@ -28,12 +29,12 @@ Normal Mode:
 - o : new line and insert mode
 - i : insert mode
 - / : search: limitied to 40 chars
-- ctrl + u : undo
-- ctrl + r : redo
 - ctrl + q : quit
 - ctrl + s : save 
 - ctrl + x : quit without saving
-
+- d + d    : delete line
+- y + y    : yank line
+- p        : paste from clipboard
 - ctrl + f : open file tree
 - ctrl + h : switch to file tree mode
 

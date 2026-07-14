@@ -14,6 +14,7 @@ void init_editor_settings( Editor * e )
 }
 
 
+/*
 void init_undo_redo_stacks( Editor * e )
 {
 	e->can_undo = false;
@@ -24,6 +25,7 @@ void init_undo_redo_stacks( Editor * e )
 	if( e->redo_stack == NULL ) die( "init_undo_redo_stacks(): failed to init redo_stack.");
 	return;
 }
+*/
 
 
 void init( Editor * e )
@@ -35,13 +37,14 @@ void init( Editor * e )
 	strcpy( e->debug_message, "" );
 	e->done = false;
 	e->tabs = 0;
+	e->clipboard = NULL;
 	i32 i = load_file( &e->lines, NULL, e->files.file_name, e->debug_message );
 	if( i == 1 )
 		strcpy( e->debug_message, ": new buffer created" );
 	init_cursor( &e->cursor );
 	e->line_buff = init_line_buffer();
 	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );	
-	init_undo_redo_stacks( e );
+//	init_undo_redo_stacks( e );
 	update( e );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 
@@ -165,8 +168,8 @@ i32 delete_file( Editor * e, File_tree * tree, Window * window, char * file_name
 				load_file( &e->lines, NULL, e->files.file_name, e->debug_message );
 				init_cursor( &e->cursor );
 				update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
-				free_undo_redo_stacks( e );
-				init_undo_redo_stacks( e );
+				//free_undo_redo_stacks( e );
+				//init_undo_redo_stacks( e );
 				update( e );
 				index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 				init_editor_settings( e );
@@ -293,7 +296,6 @@ i32 create_file( Editor * e, File_tree * tree, Window * window )
 }
 
 
-
 void insert_char_to_buff( Editor * e, char c )
 {
 	bool update_screen = false; 
@@ -399,7 +401,7 @@ void backspace( Editor * e )
 		e->saved = false;
 		e->cursor.index = e->lines.list_of_lines[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;	
- 		push_del_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
+ 		//push_del_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
 		write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
 		
 		remove_line( e );
@@ -437,6 +439,7 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 	if( next_line != NULL )
 		next_line->prev = new_line;
 	new_line->copacity = size_of_data + 50;
+	//new_line->count =;
 	new_line->data = calloc( new_line->copacity, sizeof( char ) );
 	reset_buffer( e->line_buff );	
 	append_to_buffer( e->line_buff, data, size_of_data );	
@@ -449,7 +452,7 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 void enter_key( Editor * e )
 {
 	e->can_redo = false;
- 	push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 	//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 	write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
 	Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
 	i32 size = temp->count - e->cursor.index;
@@ -460,7 +463,7 @@ void enter_key( Editor * e )
 		buff[j] = temp->data[i];
 		j++;
 	}
- 	push_new_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
+ 	//push_new_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
 	add_new_line( e, buff, j );
 	free( buff );
 	temp->count = e->cursor.index;
@@ -494,9 +497,9 @@ void move_cursor_up( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+ 			//push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
 		}
 		e->cursor.y_index--;
 		
@@ -525,9 +528,9 @@ void move_cursor_down( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+ 			//push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
 		}
 		e->cursor.y_index++;
 
@@ -555,9 +558,9 @@ void move_cursor_left( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+ 		//	push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
 		}
 		e->cursor.index--;
 		
@@ -590,9 +593,9 @@ void move_cursor_right( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 		//	push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+ 		//	push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
 		}		
 		
 		e->cursor.index++;
@@ -670,11 +673,11 @@ void events_insert( Editor * e )
 				e->mode = NORMAL;
 				if( e->line_buff->has_changed )
 				{
- 					push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+ 		//			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-					push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+		//			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+					e->line_buff->has_changed = false;
 				}
-				
 				update_cursor( &e->cursor, e->line_buff );
 				print_mode( &e->window, e->mode, e->debug_message );
 				print_cursor( &e->cursor, e->mode );
@@ -682,15 +685,17 @@ void events_insert( Editor * e )
 				if( !events_move_cursor_insert_linux( e ) )
 				{
 					e->mode = NORMAL;
-				if( e->line_buff->has_changed )
-				{
- 					push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
-					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 					push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
-				}
-					update_cursor( &e->cursor, e->line_buff );
-					print_mode( &e->window, e->mode, e->debug_message );
-					print_cursor( &e->cursor, e->mode );
+					if( e->line_buff->has_changed )
+					{
+				//		push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
+						write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+				//		push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+					e->line_buff->has_changed = false;
+					}
+						update_cursor( &e->cursor, e->line_buff );
+						print_mode( &e->window, e->mode, e->debug_message );
+						print_cursor( &e->cursor, e->mode );
+				//		e->line_buff->has_changed = false;
 				}
 			#endif
 		}break;
@@ -706,7 +711,7 @@ void events_insert( Editor * e )
 }
 
 
-char comand_mode( Editor * e )
+char await_input( Window * window )
 {
 	char underline[] = "\e[4 q";
 	char block[] = "\e[1 q";
@@ -714,7 +719,7 @@ char comand_mode( Editor * e )
 	char c;
 	while( true )
 	{
-		c = getch( &e->window );
+		c = getch( window );
 		if( c != -1 )
 			goto done;
 	}
@@ -723,10 +728,204 @@ char comand_mode( Editor * e )
 	return c;
 }
 
+int char_to_int( char c )
+{
+	return c - 48;
+}
+
+
+
+void paste( Editor * e )
+{	
+	if( e->clipboard == NULL )
+		return;
+	//write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+	int len = strlen( e->clipboard );
+	for( int i = 0; i < len; i++ )
+	{
+		if( e->clipboard[i] == '\n' )
+		{
+			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+			e->cursor.index = e->lines.list_of_lines[e->cursor.y_index]->count;
+			enter_key( e );
+			continue;
+		}
+		insert_char_to_buff( e, e->clipboard[i] );
+	}
+	write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+	e->line_buff->has_changed = false;
+	return;
+}
+
+
+void copy_line( Editor * e, int line_num )
+{
+	int len, i, j;
+	if( line_num < e->lines.count )
+	{
+		if( e->clipboard == NULL )
+		{
+			e->clipboard = calloc( e->lines.list_of_lines[line_num]->count + 3, sizeof( char ) );
+			e->clipboard[0] = '\n';
+			e->clipboard[1] = '\0';
+			len = strlen( e->clipboard );
+		}
+		else
+		{
+			e->clipboard = realloc( e->clipboard, ( strlen( e->clipboard) + e->lines.list_of_lines[line_num]->count + 2  )  * sizeof( char ) );
+			len = strlen( e->clipboard );
+			e->clipboard[len++] = '\n';
+			e->clipboard[len] = '\0';
+		}
+		 i = len;
+		 j = 0;
+		for( j = 0;  j < e->lines.list_of_lines[line_num]->count; j++ )
+		{
+			e->clipboard[i++] = e->lines.list_of_lines[line_num]->data[j];
+		}
+		e->clipboard[i] = '\0';
+	}
+	return;
+}
+
+
+void copy_lines( Editor * e, int n )
+{
+	if( e->clipboard != NULL )
+	{
+		free( e->clipboard );
+		e->clipboard = NULL;
+	}
+	for( int i = 0; i < n; i++ )
+		copy_line( e, e->cursor.y_index + i );
+	return;
+}
+
+
+void delete_line( Editor * e, int line_num )
+{
+	Line_data * temp = NULL;	
+	if( line_num == 0 && e->lines.count == 1 )
+	{
+		e->lines.list_of_lines[line_num]->count = 0;
+		reset_buffer( e->line_buff );	
+		update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
+		render(e);
+		return;
+	}
+	if( line_num == 0 && e->lines.count > 1 )
+	{
+		temp = e->lines.list_of_lines[line_num];
+		e->lines.head = temp->next;
+		e->lines.head->prev = NULL;
+	}
+	else
+	{
+		temp = e->lines.list_of_lines[line_num];
+		temp->prev->next = temp->next;
+		if( temp->next != NULL )
+			temp->next->prev = temp->prev;
+	}
+	free( temp->data );
+	free( temp->to_display );
+	free( temp );
+	e->lines.count--;
+
+	if( e->cursor.y_index > e->lines.count -1 )
+		e->cursor.y_index--;
+	update_list_of_lines( &e->lines );
+	reset_buffer( e->line_buff );	
+	update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
+	render(e);
+	return;
+}
+
+
+void delete_lines( Editor * e, int n )
+{
+	while( e->cursor.y_index + n > e->lines.count )
+		n--;
+	copy_lines( e, n );
+	for( int i = 0; i < n; i++ )
+		delete_line( e, e->cursor.y_index );
+	return;
+}
+
+void comand_mode( Editor * e, char c )
+{
+	if( isdigit( c ) )
+	{
+		int n = char_to_int( c );
+		while( true )
+		{
+			c = await_input( &e->window );
+			if( !isdigit( c ) )
+			{
+				if( c != 'y' && c != 'd' )
+					goto done;
+				
+				if( c == 'y' )	
+				{
+					if( ( c = await_input( &e->window ) ) != 'y' ) 
+						goto done;
+					copy_lines( e, n );
+					goto done;
+				}
+
+				if( c == 'd' )	
+				{
+					if( ( c = await_input( &e->window ) ) != 'd' ) 
+						goto done;
+					delete_lines( e, n );
+					goto done;
+				}
+			}
+			else if( isdigit( c ) )
+				n *= 10 + char_to_int( c );
+		}
+	}
+
+	switch( c )
+	{
+		case 'y':
+		{
+			c = await_input( &e->window );
+			if( c == 'y' )
+			{
+				if( e->clipboard != NULL )
+				{
+					free( e->clipboard );
+					e->clipboard = NULL;
+				}
+				copy_line( e, e->cursor.y_index );
+			}
+		}break;
+		case 'd':
+		{
+			c = await_input( &e->window );
+			if( c == 'd' )
+			{
+				if( e->clipboard != NULL )
+				{
+					free( e->clipboard );
+					e->clipboard = NULL;
+				}
+				copy_line( e, e->cursor.y_index );
+				delete_line( e, e->cursor.y_index );
+			}
+		}break;
+	}
+done:
+	return;
+}
+
+
 
 void events_normal( Editor * e )
 {	
-	int c = getch( &e->window );
+	char c = getch( &e->window );
+	if( isdigit( c ) )
+		comand_mode( e, c );
 	#ifdef _WIN32	
 		if( c <= 40 && c >= 37 )
 		{
@@ -768,42 +967,30 @@ void events_normal( Editor * e )
 				events_move_cursor_insert_linux( e );	
 			}break;
 		#endif
-
 		case CTRL_KEY( 'r' ):
 		{
- 			redo_change( e->redo_stack, e->undo_stack, &e->cursor, &e->lines, e->line_buff, &e->window, &e->can_redo,  &e->can_undo );
-			render( e );
+ 			//redo_change( e->redo_stack, e->undo_stack, &e->cursor, &e->lines, e->line_buff, &e->window, &e->can_redo,  &e->can_undo );
+			//render( e );
 		}break;
-	
+		case 'p':
+		{
+			paste( e );
+		}break;
 		case 'd':
 		{
-			comand_mode( e );
-			switch( c )
-			{
-				case 'd':
-				{
-					/*
-					push_del_line_to_undo_stack( e );
-					push_change_to_undo_stack( e, e->line_buff->has_changed, e->line_buff->line_deleted, e->line_buff->line_added );
-					remove_line_2( e );
-					update_list_of_lines( &e->lines );
-					update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );
-					render( e );
-					*/
-				}break;
-			}
+			comand_mode( e, c );
+		}break;
+
+		case 'y':
+		{
+			comand_mode( e, c );
 		}break;
 
 		case CTRL_KEY( 'u' ):
 		{
- 			undo_change( e->redo_stack, e->undo_stack, &e->cursor, &e->lines, e->line_buff, &e->window, &e->can_redo,  &e->can_undo );
-			render( e );
+ 			//undo_change( e->redo_stack, e->undo_stack, &e->cursor, &e->lines, e->line_buff, &e->window, &e->can_redo,  &e->can_undo );
+			//render( e );
 		}break;
-		case CTRL_KEY( 'c' ):
-		{
-			//shift_everything();
-		}break;
-
 		case CTRL_KEY( 's' ):
 		{
 			//write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
@@ -853,6 +1040,7 @@ void events_normal( Editor * e )
 }
 
 
+/*
 void free_undo_redo_stacks( Editor * e )
 {
 	for( int i = 0; i < e->undo_stack->copacity; i++ )
@@ -872,8 +1060,7 @@ void free_undo_redo_stacks( Editor * e )
 	free( e->redo_stack );
 	return;
 }
-
-
+*/
 
 void events_file_tree( Editor * e ) 
 {
@@ -1036,8 +1223,8 @@ open_file:
 							e->files.file_name = temp_data;
 							init_cursor( &e->cursor );
 							update_line_buffer( e->line_buff, e->lines.list_of_lines[e->cursor.y_index] );		
-							free_undo_redo_stacks( e );
-							init_undo_redo_stacks( e );
+							//free_undo_redo_stacks( e );
+							//init_undo_redo_stacks( e );
 							update( e );
 							index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 							init_editor_settings( e );
@@ -1136,11 +1323,14 @@ void quit( Editor * e )
 	//clear screen!
 	write( STDOUT_FILENO, "\x1b[2J", 4 );
 	write( STDOUT_FILENO, "\x1b[H", 3 );
-	free_undo_redo_stacks( e );
+	//free_undo_redo_stacks( e );
 	free( e->line_buff->contents );
 	if( e->line_buff->to_display != NULL )
 		free( e->line_buff->to_display );
 	free( e->line_buff );
 	disable_raw_mode( &e->window );
+	// free clipboard;
+	if( e->clipboard != NULL )
+		free( e->clipboard );
 	return;
 }
