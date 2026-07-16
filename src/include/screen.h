@@ -4,7 +4,6 @@
 
 #include "global.h"
 #include <stdbool.h>
-#include <unistd.h>
 #include <stdio.h>
 
 #ifdef _WIN32
@@ -12,6 +11,7 @@
 #elif __linux__
 	#include <sys/ioctl.h>
 	#include <termios.h>
+	#include <unistd.h>
 #endif
 
 #include "cursor.h"
@@ -34,8 +34,10 @@ void disable_raw_mode( Window * window );
 void enable_Raw_mode( Window * window );
 bool get_window_size( Window * window );
 //void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree );
-void update_display_line( Buff * line_buff, Cursor * c, Window * window, int line_nums, const char * file_name );
-void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name );
+void update_display_line( Buff * line_buff, Syntax * syntax, Cursor * c, Window * window, int line_nums, const char * file_name );
+
+void print_chars_to_screen( Buff * line_buff, Syntax * syntax, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name );
+
 void print_mode( Window * window, int mode, char * debug_message );
 void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff  );
 

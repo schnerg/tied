@@ -1,9 +1,7 @@
 #include "include/editor.h"
 
-
 void update( Editor * e  );
 void add_new_line( Editor * e, char * data, int size_of_data );
-void free_undo_redo_stacks( Editor * e );
 
 
 void init_editor_settings( Editor * e )
@@ -13,19 +11,6 @@ void init_editor_settings( Editor * e )
 	return;
 }
 
-
-/*
-void init_undo_redo_stacks( Editor * e )
-{
-	e->can_undo = false;
-	e->can_redo = false;
-	e->undo_stack = init_py_list( sizeof( Change * ) );
-	if( e->undo_stack == NULL ) die( "init_undo_redo_stacks(): failed to init undo_stack.");
-	e->redo_stack = init_py_list( sizeof( Change * ) );
-	if( e->redo_stack == NULL ) die( "init_undo_redo_stacks(): failed to init redo_stack.");
-	return;
-}
-*/
 
 
 void init( Editor * e )
@@ -38,6 +23,7 @@ void init( Editor * e )
 	e->done = false;
 	e->tabs = 0;
 	e->clipboard = NULL;
+	e->syntax.lexer = NULL;
 	i32 i = load_file( &e->lines, NULL, e->files.file_name, e->debug_message );
 	if( i == 1 )
 		strcpy( e->debug_message, ": new buffer created" );
@@ -72,39 +58,47 @@ void render_2( Editor * e )
 }
 
 
-void render_3( Editor * e )
-{
-	update( e );
-	update_cursor( &e->cursor, e->line_buff );
-	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
-	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
-
- 	update_display_line( e->line_buff, &e->cursor, &e->window, e->line_nums, e->files.file_name );
-	
-	print_mode( &e->window, e->mode, e->debug_message );
-	if( file_tree_toggle && e->mode == FLTREE )
-		print_cursor( &e->tree.cursor, e->mode );
-	else
-		print_cursor( &e->cursor, e->mode );
-	return;
-}
-
-
-
 void render( Editor * e )
 {
 	update( e );
 	update_cursor( &e->cursor, e->line_buff );
 	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
- 	print_chars_to_screen( e->line_buff, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->files.file_name );
+ 	print_chars_to_screen( e->line_buff, &e->syntax, &e->lines, &e->cursor, &e->window, e->line_nums, &e->tree, e->files.file_name );
 	print_mode( &e->window, e->mode, e->debug_message );
 	if( file_tree_toggle && e->mode == FLTREE )
 		print_cursor( &e->tree.cursor, e->mode );
 	else
 		print_cursor( &e->cursor, e->mode );
+	
+	if( e->syntax.lexer != NULL )
+		if( e->syntax.lexer->update )
+		{
+		}
 	return;
 }
+
+void render_3( Editor * e )
+{
+	update( e );
+	update_cursor( &e->cursor, e->line_buff );
+	index_to_rx( &e->cursor, e->line_buff, e->line_nums );
+	adjust_yx_offsets( &e->cursor, &e->window, e->line_nums, e->line_buff );
+ 	update_display_line( e->line_buff, &e->syntax, &e->cursor, &e->window, e->line_nums, e->files.file_name );
+	print_mode( &e->window, e->mode, e->debug_message );
+	if( file_tree_toggle && e->mode == FLTREE )
+		print_cursor( &e->tree.cursor, e->mode );
+	else
+		print_cursor( &e->cursor, e->mode );
+	
+	if( e->syntax.lexer != NULL )
+		if( e->syntax.lexer->update )
+		{
+			render( e );
+		}
+	return;
+}
+
 
 
 bool _delete_file( const char * file_name )
@@ -299,7 +293,7 @@ i32 create_file( Editor * e, File_tree * tree, Window * window )
 void insert_char_to_buff( Editor * e, char c )
 {
 	bool update_screen = false; 
-	e->can_redo = false;
+	//e->can_redo = false;
 	e->saved = false;
 	Buff * temp = e->line_buff;
 	temp->count++;
@@ -376,7 +370,7 @@ void backspace( Editor * e )
 	bool update_screen = false;
 	if( e->cursor.index > 0 )
 	{
-		e->can_redo = false;
+		e->line_buff->has_changed = true;
 		e->saved = false;
 		if( e->line_buff->index == -1 )
 			e->line_buff->index = e->cursor.index;
@@ -397,15 +391,12 @@ void backspace( Editor * e )
 	}	
 	else if( e->cursor.y_index > 0 )
 	{
-		e->can_redo = false;
+		e->line_buff->has_changed = true;
 		e->saved = false;
 		e->cursor.index = e->lines.list_of_lines[e->cursor.y_index-1]->count;
 		e->cursor.last_index = e->cursor.index;	
- 		//push_del_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
 		write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-		
 		remove_line( e );
-		
 		update_list_of_lines( &e->lines );
 		e->cursor.y_index--;	
 		if( e->cursor.index - e->cursor.x_offset >= e->window.cols - 1)
@@ -426,8 +417,6 @@ void backspace( Editor * e )
 
 
 
-
-
 void add_new_line( Editor * e, char * data, int size_of_data )
 {
 	Line_data * current_line  = e->lines.list_of_lines[e->cursor.y_index];
@@ -439,7 +428,7 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 	if( next_line != NULL )
 		next_line->prev = new_line;
 	new_line->copacity = size_of_data + 50;
-	//new_line->count =;
+	new_line->count = size_of_data; 
 	new_line->data = calloc( new_line->copacity, sizeof( char ) );
 	reset_buffer( e->line_buff );	
 	append_to_buffer( e->line_buff, data, size_of_data );	
@@ -451,20 +440,13 @@ void add_new_line( Editor * e, char * data, int size_of_data )
 
 void enter_key( Editor * e )
 {
-	e->can_redo = false;
- 	//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 	write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
+	e->line_buff->has_changed = true;
 	Line_data * temp = e->lines.list_of_lines[e->cursor.y_index];
 	i32 size = temp->count - e->cursor.index;
 	char * buff = calloc( size, sizeof( char ) );
-	int j = 0;
-	for( int i = e->cursor.index; i < temp->count; i++ )
-	{
-		buff[j] = temp->data[i];
-		j++;
-	}
- 	//push_new_line_to_undo_stack( e->undo_stack, e->line_buff, &e->cursor, e->lines.list_of_lines[e->cursor.y_index] );
-	add_new_line( e, buff, j );
+	int j = temp->count - e->cursor.index;
+	add_new_line( e, &temp->data[e->cursor.index], j );
 	free( buff );
 	temp->count = e->cursor.index;
 	update_line( temp );
@@ -497,10 +479,10 @@ void move_cursor_up( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			//push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+			e->line_buff->has_changed = false;
 		}
+		
 		e->cursor.y_index--;
 		
 		if( e->cursor.y_offset > 0 && e->cursor.y_index - e->cursor.y_offset < 0 )
@@ -528,9 +510,8 @@ void move_cursor_down( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 			//push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+			e->line_buff->has_changed = false;
 		}
 		e->cursor.y_index++;
 
@@ -558,12 +539,10 @@ void move_cursor_left( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 			//push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 		//	push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
+			e->line_buff->has_changed = false;
 		}
 		e->cursor.index--;
-		
 		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
 
 		if( e->cursor.rx <= ( e->line_nums + 1 ) && e->cursor.x_offset > 0 )
@@ -593,10 +572,9 @@ void move_cursor_right( Editor * e )
 		bool update_screen = false;
 		if( e->mode == INSERT && e->line_buff->has_changed == true )
 		{
- 		//	push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 			write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
- 		//	push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
-		}		
+			e->line_buff->has_changed = false;
+		}
 		
 		e->cursor.index++;
 		index_to_rx( &e->cursor, e->line_buff, e->line_nums );
@@ -673,9 +651,7 @@ void events_insert( Editor * e )
 				e->mode = NORMAL;
 				if( e->line_buff->has_changed )
 				{
- 		//			push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 					write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-		//			push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
 					e->line_buff->has_changed = false;
 				}
 				update_cursor( &e->cursor, e->line_buff );
@@ -687,15 +663,13 @@ void events_insert( Editor * e )
 					e->mode = NORMAL;
 					if( e->line_buff->has_changed )
 					{
-				//		push_insert_to_undo_stack( e->undo_stack, e->line_buff, e->lines.list_of_lines[e->cursor.y_index], &e->cursor );
 						write_line_buffer_to_line( e->lines.list_of_lines[e->cursor.y_index], e->line_buff );
-				//		push_change_to_undo_stack( e->undo_stack, e->redo_stack, e->line_buff, &e->can_undo );
-					e->line_buff->has_changed = false;
+						e->line_buff->has_changed = false;
 					}
-						update_cursor( &e->cursor, e->line_buff );
-						print_mode( &e->window, e->mode, e->debug_message );
-						print_cursor( &e->cursor, e->mode );
-				//		e->line_buff->has_changed = false;
+					update_cursor( &e->cursor, e->line_buff );
+					print_mode( &e->window, e->mode, e->debug_message );
+					print_cursor( &e->cursor, e->mode );
+			//		e->line_buff->has_changed = false;
 				}
 			#endif
 		}break;
@@ -1217,6 +1191,10 @@ open_file:
 						free_file( &e->lines );
 						if( load_file( &e->lines, file, temp_data, e->debug_message ) != 1 )
 						{
+
+							if( e->syntax.lexer != NULL )
+								free( e->syntax.lexer );
+							e->syntax.lexer = NULL;
 							e->mode = NORMAL;
 							if( e->files.file_name != NULL )
 								free( e->files.file_name );
@@ -1332,5 +1310,7 @@ void quit( Editor * e )
 	// free clipboard;
 	if( e->clipboard != NULL )
 		free( e->clipboard );
+	if( e->syntax.lexer != NULL )
+		free( e->syntax.lexer );
 	return;
 }

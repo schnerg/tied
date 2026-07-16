@@ -1,6 +1,5 @@
 #include "include/buffer.h"
 
-
 Buff * init_buffer()
 {
 	Buff * buff = calloc( 1, sizeof( Buff ) );

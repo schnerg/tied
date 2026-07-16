@@ -22,15 +22,14 @@
 
 #include "global.h"
 #include "py_list.h"
-#include "screen.h"
 #include "buffer.h"
 #include "cursor.h"
 #include "data.h"
 #include "fileio.h"
 #include "search.h"
 #include "io.h"
-//#include "undo_redo.h"
-#include "syntax.h"
+#include "screen.h"
+//#include "syntax.h"
 #include "file_tree.h"
 
 
@@ -38,26 +37,18 @@
 
 typedef struct
 {
+	//syntax
+	Syntax syntax;
+
 	File_tree tree;
-	
-	//undo_redo_stuffs
-	Buff * line_buff;
-	py_list_t * undo_stack;
-	py_list_t * redo_stack;
-	bool can_undo;	
-	bool can_redo;	
 	//int mode;
 	MODE mode;
-
 	char * clipboard;
-
 	Cursor cursor;
 //line stuff
+	Buff * line_buff;
 	Lines_data lines;	
-
 	Files files;
-	//char * file_name;
-
 	int tabs;
 	int tabs_space;
 	int line_nums;

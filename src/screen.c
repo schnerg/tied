@@ -115,10 +115,9 @@ void adjust_yx_offsets( Cursor * c, Window * window, int line_nums, Buff * cbuff
 }
 
 
-void update_display_line( Buff * line_buff, Cursor * c, Window * window, int line_nums, const char * file_name )
+void update_display_line( Buff * line_buff, Syntax * syntax, Cursor * c, Window * window, int line_nums, const char * file_name )
 {
 	Buff * buffer = init_buffer();
-	
 	bool is_c_file = false;
 		if( file_name != NULL )
 			if( strstr( file_name, ".c" ) != NULL )
@@ -152,8 +151,8 @@ void update_display_line( Buff * line_buff, Cursor * c, Window * window, int lin
 			len = window->cols - ( line_nums + 1 );
 	
 	
-	if( is_c_file  && syntax )
-		syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
+	if( is_c_file  && toggle_syntax )
+		syntax_highlighting( buffer, syntax, &line_buff->to_display[c->x_offset], len);
 	else
 		append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
 
@@ -166,7 +165,7 @@ void update_display_line( Buff * line_buff, Cursor * c, Window * window, int lin
 }
 
 
-void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name )
+void print_chars_to_screen( Buff * line_buff, Syntax * syntax, Lines_data * lines, Cursor * c, Window * window, int line_nums, File_tree * tree, const char * file_name )
 {
 	if( !toggle_line_nums )
 		line_nums = 0;
@@ -291,8 +290,8 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 				if( len < 0 ) 
 					len = 0;
 			// syntax_highlighting 	
-				if( is_c_file  && syntax )
-					syntax_highlighting( buffer, &line_buff->to_display[c->x_offset], len);
+				if( is_c_file  && toggle_syntax )
+					syntax_highlighting( buffer,syntax, &line_buff->to_display[c->x_offset], len);
 				else
 					append_to_buffer( buffer, &line_buff->to_display[c->x_offset], len );
 			}
@@ -314,7 +313,7 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 					len = 0;
 				// syntax_highlighting 	
 				if( is_c_file  && syntax )
-					syntax_highlighting( buffer, &temp->to_display[c->x_offset], len);
+					syntax_highlighting( buffer, syntax,&temp->to_display[c->x_offset], len);
 				else	
 					append_to_buffer( buffer, &temp->to_display[c->x_offset], len );
 			}
@@ -334,6 +333,8 @@ void print_chars_to_screen( Buff * line_buff, Lines_data * lines, Cursor * c, Wi
 			}
 		}
 	}
+	
+
 	append_to_buffer(buffer, "\e[?25h",6); // show cursor	
 	write( STDOUT_FILENO, buffer->contents, buffer->count );
 	free( buffer->contents );
